@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Tienda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="app-root">
+  <div id="pantalla-login">
+    <div class="login-ring-container">
+       <div class="animated-ring">
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+</div>
+      <div class="login-card">
+        <h1></h1>
+        <div class="contenedor-botones-login">
+            <button id="btnGoogle" class="btn-google">
+              
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                    <path fill="none" d="M0 0h48v48H0z"></path>
+                </svg>
+
+                Continuar con Google
+            </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pantalla-inicio">
+    <h1 class="title">INDEX</h1>
+    <div class="botones-container">
+      <a href="#" class="boton" id="btn-Inventario">INVENTARIO</a>
+      <a href="#" class="boton" id="btn-Ventas">VENTAS</a> 
+    </div>
+    <button id="btnLogout" class="boton-volver">Cerrar Sesión</button>
+  </div>
+
+  <div id="pantalla-menu-ventas">
+    <h1 class="title">Sección de Ventas</h1>
+    <div class="botones-container">
+      <a href="#" class="boton" id="btn-Menu-Ventas-Fisicas">VENTAS FÍSICAS</a>
+      <a href="#" class="boton" id="btn-Menu-Ventas-Online">VENTAS ONLINE</a> 
+    </div>
+    <button id="btnVolverInicioDesdeVentas" class="boton-volver">← Volver al Inicio</button>
+  </div>
+
+  <div id="pantalla-INVENTARIO">
+    <h1>Añadir y Gestionar Mercancía</h1>
+    <div class="inventory-header">
+        <div class="inventory-actions-group">
+            <div class="formulario-producto-nuevo">
+              <div class="tarjeta-input-producto">
+                <h2>Añadir Nuevo Producto</h2>
+                <input type="file" accept="image/*" id="inputProductoImagen" style="display:none">
+                <button class="btn-seleccionar-imagen" id="btnSeleccionarImagen">📷 Seleccionar Imagen</button>
+                <img id="previewProductoImagen" src="" alt="Vista previa de la imagen" class="preview-producto-imagen">
+                <label for="inputCodigoBarras">Código de Barras:</label>
+                <div class="flex-gap-5">
+                    <input type="text" id="inputCodigoBarras" placeholder="Ej: 123456789" class="input-codigo-barras">
+                    <button id="btnEscanearInventario" class="btn-escanear" title="Escanear Código">📷</button>
+                </div>
+                <label for="inputNombreProducto">Nombre:</label>
+                <input type="text" id="inputNombreProducto" placeholder="Nombre del Producto">
+                <label for="inputPrecioProducto">Precio:</label>
+                <input type="number" id="inputPrecioProducto" placeholder="$ 0" min="0" step="1">
+                <label for="inputCategoriaProducto">Categoría:</label>
+                <select id="inputCategoriaProducto" class="select-categoria-producto">
+                  <option value="">-- Selecciona una categoría --</option>
+                  <option value="Perecederos">🥦 Perecederos (Frescos)</option>
+                  <option value="Abarrotes">🛒 Abarrotes / Despensa (Secos)</option>
+                  <option value="Bebidas">🥤 Bebidas</option>
+                  <option value="Congelados">🧊 Congelados</option>
+                  <option value="Hogar">🧹 Cuidado del Hogar y Limpieza</option>
+                  <option value="Higiene">🧴 Cuidado Personal / Higiene</option>
+                  <option value="Otras">📦 Otras categorías</option>
+                </select>
+                
+                <label for="inputCantidadProducto">Cantidad:</label>
+                <input type="number" id="inputCantidadProducto" placeholder="Ej: 1" min="1" step="1">
+                <button class="btn-añadir btn-limpiar-formulario" id="btnLimpiarFormulario">Limpiar</button>
+                <button class="btn-añadir" id="btnGuardarProducto">Añadir Producto</button>
+              </div>
+            </div>
+            <div class="search-summary-group">
+                <div class="search-section">
+                    <h2>Buscar Producto</h2>
+                    <div class="search-input-group">
+                        <input type="text" id="inputBuscarProducto" placeholder="Nombre o Código">
+                        <button class="btn-buscar" id="btnBuscarProducto">Buscar</button>
+                        <button class="btn-limpiar-busqueda" id="btnLimpiarBusqueda">Limpiar</button>
+                    </div>
+                </div>
+                <div class="inventory-summary-card">
+                    <h2>Productos Registrados</h2>
+                    <p id="totalProductosCount" class="summary-count">0</p>
+                </div>
+            </div>
+            <div class="export-section">
+                <button id="btnExportarDatos" class="btn-exportar">Exportar Datos</button>
+            </div>
+        </div>
+    </div>
+    <h2 id="inventory-products-title">Productos en Inventario</h2>
+    <div class="categorias-filtro-bar" id="categoriasFiltroBar">
+      <button class="btn-categoria-filtro activo" data-categoria="todas">🏪 Todas</button>
+      <button class="btn-categoria-filtro" data-categoria="Perecederos">🥦 Perecederos</button>
+      <button class="btn-categoria-filtro" data-categoria="Abarrotes">🛒 Abarrotes</button>
+      <button class="btn-categoria-filtro" data-categoria="Bebidas">🥤 Bebidas</button>
+      <button class="btn-categoria-filtro" data-categoria="Congelados">🧊 Congelados</button>
+      <button class="btn-categoria-filtro" data-categoria="Hogar">🧹 Hogar</button>
+      <button class="btn-categoria-filtro" data-categoria="Higiene">🧴 Higiene</button>
+      <button class="btn-categoria-filtro" data-categoria="Otras">📦 Otras</button>
+    </div>
+    <div class="contenedor-productos" id="contenedorProductos"></div>
+    <button id="btnVolverInicio" class="boton-volver">← Volver al Inicio</button>
+  </div>
+
+  <div id="pantalla-ventas-fisicas">
+    <h1>Registro de Ventas Físicas</h1>
+    <button id="btnVerHistorial" class="btn-historial-esquina btn-historial-esquina-position">📅 Historial</button>
+
+    <!-- NUEVO CONTENEDOR FLEXIBLE Y RESPONSIVE -->
+    <div class="contenedor-ventas-independientes"> 
+      
+        <!-- TARJETA 1: PUNTO DE VENTA -->
+        <div class="tarjeta-venta-independiente formulario-venta-flex">
+            <h2>Punto de Venta</h2>
+            <div class="panel-venta-seccion panel-venta-seccion-transparent">
+                <label for="inputBuscarProductVenta">Buscar Producto (Nombre o Código):</label>
+                <div class="flex-gap-5">
+                    <input type="text" id="inputBuscarProductVenta" placeholder="Ej: arroz o 123456" class="input-buscar-producto-venta">
+                    <button id="btnEscanearVenta" class="btn-escanear" title="Escanear Código">📷</button>
+                </div>
+                <!-- Cantidad -->
+                <div id="panelCantidadVenta" class="panel-cantidad-venta" style="display:none;">
+                  <div class="producto-seleccionado-info" id="productoSeleccionadoInfo"></div>
+                  <label for="inputCantidadVenta">Cantidad a vender:</label>
+                  <input type="number" id="inputCantidadVenta" placeholder="Ej: 1" min="1" step="1">
+                  <button class="btn-buscar btn-agregar-al-carrito" id="btnAgregarAlCarrito">+ Añadir a la Lista</button>
+                </div>
+                <!-- Select oculto para compatibilidad con el JS existente -->
+                <select id="selectProductoVenta" style="display:none;">
+                    <option value="">-- Selecciona un producto --</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- TARJETA 2: LISTA ACTUAL -->
+        <div class="tarjeta-venta-independiente formulario-venta-flex-1-5">
+            <h2>Lista Actual</h2>
+            <div class="panel-venta-seccion panel-venta-seccion-transparent-column">
+                <div class="header-carrito">
+                    <span class="span-producto">Producto</span>
+                    <span class="span-cantidad">Cant.</span>
+                    <span class="span-precio">V. Unit</span>
+                    <span class="span-precio">V. Total</span>
+                    <span class="span-eliminar"></span>
+                </div>
+                <div id="listaCarrito" class="carrito-container carrito-container-styles">
+                    <p class="no-productos-agregados">No hay productos agregados.</p>
+                </div>
+                <div class="total-venta-preview total-venta-preview-styles">
+                    <strong>Total de la Compra:</strong>
+                    <span class="monto">$<span id="totalCarritoPreview">0</span></span>
+                </div>
+                <div class="botones-accion-venta botones-accion-venta-margin">
+                    <button class="btn-borrar-producto btn-limpiar-venta" id="btnLimpiarVenta">Limpiar Venta</button>
+                    <button class="btn-añadir btn-registrar-venta" id="btnRegistrarVenta">Registrar Venta</button>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- FIN DEL CONTENEDOR FLEXIBLE -->
+
+    <button id="btnVolverVentasFisicas" class="boton-volver">← Volver al Menú Ventas</button>
+  </div>
+
+  <!-- NUEVA PÁGINA: Historial Ventas Físicas -->
+  <div id="pantalla-historial-fisicas">
+    <h1>Historial de Ventas</h1>
+
+    <!-- Sección toggle: Ventas de Hoy -->
+    <div class="tarjeta-ventas-hoy-independiente">
+      <div class="ventas-hoy-header" id="btnToggleVentasHoy">
+        <h2 class="titulo-ventas-hoy-independiente">🧾 Ventas de Hoy</h2>
+        <button class="btn-toggle-ventas-hoy" aria-label="Mostrar/Ocultar ventas de hoy">
+          <span class="toggle-icono">▼</span>
+        </button>
+      </div>
+      <div id="listaVentasHoy" class="lista-ventas-scroll ventas-hoy-lista">
+        <p>Aún no hay ventas registradas hoy.</p>
+      </div>
+    </div>
+
+    <!-- Sección toggle: Días Anteriores -->
+    <div class="tarjeta-ventas-hoy-independiente">
+      <div class="ventas-hoy-header" id="btnToggleHistorialFisicas">
+        <h2 class="titulo-ventas-hoy-independiente">📅 Ventas de Días Anteriores</h2>
+        <button class="btn-toggle-ventas-hoy" aria-label="Mostrar/Ocultar historial">
+          <span class="toggle-icono">▼</span>
+        </button>
+      </div>
+      <div id="listaHistorialAcordeon" class="lista-ventas-scroll ventas-hoy-lista lista-historial-acordeon-max-height">
+      </div>
+    </div>
+
+    <button id="btnVolverDesdeHistorialFisicas" class="boton-volver">← Volver a Ventas Físicas</button>
+  </div>
+
+  <div id="pantalla-ventas-online">
+    <h1>Pedidos Online</h1>
+    <button id="btnVerHistorialOnline" class="btn-historial-esquina btn-historial-esquina-position">📅 Historial</button>
+      <div class="inventory-actions-group">
+
+        <div class="search-summary-group">
+          <div class="inventory-summary-card">
+            <div id="resumenPedidosAdmin" class="resumenPedidosAdmin-panel"></div>
+          </div>
+        </div>
+
+        <div class="export-section online-filtros-panel-card">
+          <div class="filtros-pedidos-wrap">
+            <button class="btn-filtro-estado activo" data-estado="todos">Activos</button>
+            <button class="btn-filtro-estado" data-estado="pago_confirmado">✅ Confirmado</button>
+            <button class="btn-filtro-estado" data-estado="entregado">📦 Entregado</button>
+            <button class="btn-filtro-estado" data-estado="cancelado">🚫 Cancelado</button>
+          </div>
+          <div class="online-acciones-wrap">
+            <button id="btnRefrescarPedidosAdmin" class="btn-buscar btn-refrescar-online">🔄 Actualizar</button>
+            <button id="btnBorrarTodasVentasCanceladas" class="btn-borrar-producto btn-borrar-todas-canceladas">🗑️ Borrar canceladas</button>
+          </div>
+        </div>
+
+      </div>
+      
+    <h2 id="online-pedidos-title">Pedidos</h2>
+    <div id="listaPedidosAdmin" class="online-pedidos-lista transparente"></div>
+
+    <button id="btnVolverVentasOnline" class="boton-volver">← Volver al Menú Ventas</button>
+  </div>
+
+  <!-- NUEVA PÁGINA: Historial Online -->
+  <div id="pantalla-historial-online">
+    <h1>Historial de Pedidos</h1>
+
+    <!-- Sección toggle: Entregas de Hoy -->
+    <div class="tarjeta-ventas-hoy-independiente">
+      <div class="ventas-hoy-header" id="btnToggleEntregasHoy">
+        <h2 class="titulo-ventas-hoy-independiente">📦 Entregas de Hoy</h2>
+        <button class="btn-toggle-ventas-hoy" aria-label="Mostrar/Ocultar entregas de hoy">
+          <span class="toggle-icono">▼</span>
+        </button>
+      </div>
+      <div id="listaEntregasHoy" class="lista-ventas-scroll ventas-hoy-lista lista-entregas-hoy">
+      </div>
+    </div>
+
+    <!-- Sección toggle: Historial Anterior -->
+    <div class="tarjeta-ventas-hoy-independiente">
+      <div class="ventas-hoy-header" id="btnToggleHistorialOnline">
+        <h2 class="titulo-ventas-hoy-independiente">🗂️ Historial Anterior</h2>
+        <button class="btn-toggle-ventas-hoy" aria-label="Mostrar/Ocultar historial anterior">
+          <span class="toggle-icono">▼</span>
+        </button>
+      </div>
+      <div id="listaHistorialEntregasAcordeon" class="lista-ventas-scroll ventas-hoy-lista lista-historial-entregas-acordeon">
+      </div>
+    </div>
+
+    <button id="btnVolverDesdeHistorialOnline" class="boton-volver">← Volver a Pedidos Online</button>
+  </div>
+
+  <div id="modal-escaner" class="modal-overlay pantalla-display-none">
+      <div class="modal-contenido">
+          <h3>Escanear Código</h3>
+          <div id="lector-camara"></div>
+          <button id="btnCerrarScanner" class="btn-borrar-producto">Cancelar</button>
+      </div>
+  </div>
+
+  <template id="template-tarjeta-producto">
+    <div class="tarjeta-producto" data-id="">
+      <img src="https://via.placeholder.com/150" alt="Imagen del Producto" class="producto-imagen">
+      <h3 class="producto-nombre">Nombre del Producto</h3>
+      <p class="producto-codigo producto-codigo-small">Cod: N/A</p>
+      <p class="producto-precio">$0</p>
+      <p class="producto-cantidad disponible">Unidades disponibles: 1</p>
+      <button class="btn-editar-producto">Editar</button>
+      <button class="btn-borrar-producto">Borrar</button>
+    </div>
+  </template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <script defer src="script.js"></script>
+
+</div><!-- fin app-root -->
+</body>
+</html>
