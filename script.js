@@ -287,14 +287,18 @@ async function loadInventory() {
     if (!user) return; 
 
     const { data, error } = await supabaseClient
-        .from('productos-imagenes')
+        .from('productos')
         .select('*')
         .eq('user_id', user.id); 
 
     if (error) {
         console.error("Error cargando inventario:", error);
     } else {
-        inventory = data; 
+        inventory = data.map(p => ({
+            ...p,
+            codigoBarras: p.codigo_barras,
+            imagen: p.imagen_url
+        }));
         renderProducts();
         updateProductCount();
     }
@@ -1529,11 +1533,11 @@ async function handleSaveProduct() {
 
         if (editingProductId !== null) {
             const { error } = await supabaseClient
-                .from('productos-imagenes')
+                .from('productos')
                 .update({ 
-                    "codigoBarras": codigo, 
+                    codigo_barras: codigo, 
                     nombre, precio, cantidad, 
-                    imagen: urlImagenFinal, 
+                    imagen_url: urlImagenFinal, 
                     categoria 
                 })
                 .eq('id', editingProductId);
@@ -1546,11 +1550,11 @@ async function handleSaveProduct() {
         } 
         else {
             const { error } = await supabaseClient
-                .from('productos-imagenes')
+                .from('productos')
                 .insert([{ 
-                    "codigoBarras": codigo,
+                    codigo_barras: codigo,
                     nombre, precio, cantidad, 
-                    imagen: urlImagenFinal, 
+                    imagen_url: urlImagenFinal, 
                     user_id: user.id,
                     categoria
                 }]);
