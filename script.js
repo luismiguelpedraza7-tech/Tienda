@@ -176,8 +176,8 @@ const EN_IFRAME_PREVIEW = (() => {
 
 // ==========================================
 // CONFIGURACIÓN DE SUPABASE
-const SB_URL = "https://mhnhfdtdpryrjaeaymsa.supabase.co";
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1obmhmZHRkcHJ5cmphZWF5bXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NDE3MjAsImV4cCI6MjA5MjExNzcyMH0.UINKafSUr0jI1_NGrh3Z-Uzhwi6Euqot3WQMsliteug";
+const SB_URL = "https://zafaxxdznxtiwfhhiwoo.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphZmF4eGR6bnh0aXdmaGhpd29vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4OTUwNDcsImV4cCI6MjA5NDQ3MTA0N30.u10ddBd2bvMTEubwV8ZntUO6m_YOawSqrzy_76ByV1c";
 const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
 // ==========================================
@@ -1780,7 +1780,7 @@ async function handleLoginWithGoogle() {
                 Continuar con Google`;
         }
     }
-    // Si no hay error, Google redirige automáticamente — onAuthStateChange lo detecta al volver
+    // Si no hay error, Google redirige — onAuthStateChange lo detecta al volver
 }
 
 async function handleLogout() {
@@ -1806,7 +1806,7 @@ if (btnLogout) btnLogout.addEventListener("click", handleLogout);
 
 // ==========================================
 // ESCUCHAR CAMBIOS DE SESIÓN EN TIEMPO REAL
-// Detecta: login exitoso desde Google, logout, expiración
+// Detecta login desde Google OAuth, logout y expiración de sesión
 // ==========================================
 supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session) {
