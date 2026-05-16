@@ -287,7 +287,7 @@ async function loadInventory() {
     if (!user) return; 
 
     const { data, error } = await supabaseClient
-        .from('productos')
+        .from('productos-imagenes')
         .select('*')
         .eq('user_id', user.id); 
 
@@ -1442,7 +1442,7 @@ async function subirImagenSupabase(archivo) {
 
     const { data, error } = await supabaseClient
         .storage
-        .from('productos')
+        .from('productos-imagenes')
         .upload(rutaArchivo, archivoParaSubir);
 
     if (error) {
@@ -1453,7 +1453,7 @@ async function subirImagenSupabase(archivo) {
 
     const { data: publicUrlData } = await supabaseClient
         .storage
-        .from('productos')
+        .from('productos-imagenes')
         .getPublicUrl(rutaArchivo);
 
     return publicUrlData.publicUrl;
@@ -1529,7 +1529,7 @@ async function handleSaveProduct() {
 
         if (editingProductId !== null) {
             const { error } = await supabaseClient
-                .from('productos')
+                .from('productos-imagenes')
                 .update({ 
                     "codigoBarras": codigo, 
                     nombre, precio, cantidad, 
@@ -1546,7 +1546,7 @@ async function handleSaveProduct() {
         } 
         else {
             const { error } = await supabaseClient
-                .from('productos')
+                .from('productos-imagenes')
                 .insert([{ 
                     "codigoBarras": codigo,
                     nombre, precio, cantidad, 
@@ -1780,7 +1780,6 @@ async function handleLoginWithGoogle() {
                 Continuar con Google`;
         }
     }
-    // Si no hay error, Google redirige — onAuthStateChange lo detecta al volver
 }
 
 async function handleLogout() {
@@ -1806,7 +1805,6 @@ if (btnLogout) btnLogout.addEventListener("click", handleLogout);
 
 // ==========================================
 // ESCUCHAR CAMBIOS DE SESIÓN EN TIEMPO REAL
-// Detecta login desde Google OAuth, logout y expiración de sesión
 // ==========================================
 supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session) {
@@ -1834,8 +1832,6 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     if (EN_IFRAME_PREVIEW) {
-        // Modo previsualizador (ej: Yachai Codex): mostrar pantalla de inicio directamente
-        // sin pasar por Supabase, para que la previsualización funcione correctamente.
         showScreen('pantalla-inicio', false);
     } else {
         checkAuthStatus();
