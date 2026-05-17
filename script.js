@@ -1040,16 +1040,14 @@ window.eliminarTicket = async function(ticketGlobalId) {
         const sale = sales.find(s => s.globalId === ticketGlobalId);
         if (!sale) return;
 
-        // Eliminar la venta de Supabase.
-        // ON DELETE CASCADE borra los items_venta, y el trigger
-        // fn_reponer_inventario() repone automáticamente el stock por cada item.
+        // Al borrar la venta, ON DELETE CASCADE elimina los items_venta.
+        // El trigger trg_reponer_inventario repone el stock en BD automáticamente.
         await deleteSaleFromSupabase(ticketGlobalId);
 
         // Actualizar estado local
         sales = sales.filter(s => s.globalId !== ticketGlobalId);
 
-        // Recargamos inventario desde Supabase para reflejar las cantidades reales
-        // actualizadas por el trigger (fuente de verdad).
+        // Recargar inventario para reflejar el stock repuesto por el trigger
         await loadInventory();
         updateSalesDropdown();
         renderSalesHistory();
@@ -1094,8 +1092,8 @@ if (btnRegistrarVenta) {
                     subtotal:  subtotal
                 });
             }
-            // Descuento local inmediato en `inventory` (respaldo visual)
-            // El trigger fn_descontar_inventario() de Supabase también lo hace en BD.
+            // El trigger trg_descontar_inventario en Supabase descuenta el stock en BD.
+            // Aquí solo actualizamos la memoria local para que la UI se vea instantáneo.
             for (let item of currentCart) {
                 const prod = inventory.find(p => p.id.toString() === item.id.toString());
                 if (prod) prod.cantidad -= item.qty;
