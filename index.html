@@ -125,15 +125,21 @@
         </div>
     </div>
     <h2 id="inventory-products-title">Productos en Inventario</h2>
-    <div class="categorias-filtro-bar" id="categoriasFiltroBar">
-      <button class="btn-categoria-filtro activo" data-categoria="todas">🏪 Todas</button>
-      <button class="btn-categoria-filtro" data-categoria="Perecederos">🥦 Perecederos</button>
-      <button class="btn-categoria-filtro" data-categoria="Abarrotes">🛒 Abarrotes</button>
-      <button class="btn-categoria-filtro" data-categoria="Bebidas">🥤 Bebidas</button>
-      <button class="btn-categoria-filtro" data-categoria="Congelados">🧊 Congelados</button>
-      <button class="btn-categoria-filtro" data-categoria="Hogar">🧹 Hogar</button>
-      <button class="btn-categoria-filtro" data-categoria="Higiene">🧴 Higiene</button>
-      <button class="btn-categoria-filtro" data-categoria="Otras">📦 Otras</button>
+    <div class="categorias-dropdown-wrap" id="categoriasFiltroBar">
+      <button class="categorias-dropdown-btn" id="categoriasDropdownBtn">
+        <span id="categoriasDropdownLabel">🏪 Todas</span>
+        <span class="categorias-dropdown-arrow">&#9662;</span>
+      </button>
+      <div class="categorias-dropdown-menu" id="categoriasDropdownMenu">
+        <button class="btn-categoria-filtro activo" data-categoria="todas">🏪 Todas</button>
+        <button class="btn-categoria-filtro" data-categoria="Perecederos">🥦 Perecederos</button>
+        <button class="btn-categoria-filtro" data-categoria="Abarrotes">🛒 Abarrotes</button>
+        <button class="btn-categoria-filtro" data-categoria="Bebidas">🥤 Bebidas</button>
+        <button class="btn-categoria-filtro" data-categoria="Congelados">🧊 Congelados</button>
+        <button class="btn-categoria-filtro" data-categoria="Hogar">🧹 Hogar</button>
+        <button class="btn-categoria-filtro" data-categoria="Higiene">🧴 Higiene</button>
+        <button class="btn-categoria-filtro" data-categoria="Otras">📦 Otras</button>
+      </div>
     </div>
     <div class="contenedor-productos" id="contenedorProductos"></div>
     <button id="btnVolverInicio" class="boton-volver">← Volver al Inicio</button>

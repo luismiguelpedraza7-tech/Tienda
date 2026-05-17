@@ -1040,14 +1040,16 @@ window.eliminarTicket = async function(ticketGlobalId) {
         const sale = sales.find(s => s.globalId === ticketGlobalId);
         if (!sale) return;
 
-        // Al borrar la venta, ON DELETE CASCADE elimina los items_venta.
-        // El trigger trg_reponer_inventario repone el stock en BD automáticamente.
+        // Eliminar la venta de Supabase.
+        // ON DELETE CASCADE borra los items_venta, y el trigger
+        // fn_reponer_inventario() repone automáticamente el stock por cada item.
         await deleteSaleFromSupabase(ticketGlobalId);
 
         // Actualizar estado local
         sales = sales.filter(s => s.globalId !== ticketGlobalId);
 
-        // Recargar inventario para reflejar el stock repuesto por el trigger
+        // Recargamos inventario desde Supabase para reflejar las cantidades reales
+        // actualizadas por el trigger (fuente de verdad).
         await loadInventory();
         updateSalesDropdown();
         renderSalesHistory();
@@ -1092,8 +1094,8 @@ if (btnRegistrarVenta) {
                     subtotal:  subtotal
                 });
             }
-            // El trigger trg_descontar_inventario en Supabase descuenta el stock en BD.
-            // Aquí solo actualizamos la memoria local para que la UI se vea instantáneo.
+            // Descuento local inmediato en `inventory` (respaldo visual)
+            // El trigger fn_descontar_inventario() de Supabase también lo hace en BD.
             for (let item of currentCart) {
                 const prod = inventory.find(p => p.id.toString() === item.id.toString());
                 if (prod) prod.cantidad -= item.qty;
@@ -2430,6 +2432,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // === DROPDOWN DE CATEGORÍAS ===
+    const dropdownWrap = document.getElementById('categoriasFiltroBar');
+    const dropdownBtn  = document.getElementById('categoriasDropdownBtn');
+    const dropdownMenu = document.getElementById('categoriasDropdownMenu');
+    const dropdownLabel = document.getElementById('categoriasDropdownLabel');
+
+    // Abrir / cerrar dropdown
+    if (dropdownBtn) {
+        dropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownWrap.classList.toggle('abierto');
+        });
+    }
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', () => {
+        if (dropdownWrap) dropdownWrap.classList.remove('abierto');
+    });
+    if (dropdownMenu) {
+        dropdownMenu.addEventListener('click', (e) => e.stopPropagation());
+    }
+
     // Filtros de categoría en inventario
     document.querySelectorAll('.btn-categoria-filtro').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2437,13 +2461,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const yaActivo = btn.classList.contains('activo');
 
             if (esTodas && yaActivo) {
-                // "Todas" ya estaba activo → ocultar productos
                 contenedorProductos.classList.toggle('oculto-productos');
                 btn.classList.toggle('atenuado');
+                if (dropdownWrap) dropdownWrap.classList.remove('abierto');
                 return;
             }
 
-            // Cualquier otro botón: mostrar productos, quitar ocultado previo
             contenedorProductos.classList.remove('oculto-productos');
             document.querySelector('.btn-categoria-filtro[data-categoria="todas"]')
                 ?.classList.remove('atenuado');
@@ -2451,7 +2474,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.btn-categoria-filtro').forEach(b => b.classList.remove('activo'));
             btn.classList.add('activo');
             categoriaActivaFiltro = btn.dataset.categoria;
-            // Respetar búsqueda activa si existe
+
+            // Actualizar etiqueta del botón del dropdown
+            if (dropdownLabel) dropdownLabel.textContent = btn.textContent.trim();
+            if (dropdownWrap) dropdownWrap.classList.remove('abierto');
+
             renderProducts(searchResults);
         });
     });
