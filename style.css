@@ -1346,6 +1346,9 @@ input[type="number"]::-webkit-outer-spin-button {
 
 input[type="number"] {
     -moz-appearance: textfield; 
+    -webkit-appearance: none;   
+    appearance: none;         
+    margin: 0;                  
 }
 
 /* CLASES PARA EL CARRITO DE COMPRAS */
