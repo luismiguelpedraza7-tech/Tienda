@@ -129,12 +129,21 @@ h1 {
     margin-bottom: 15px;
 }
 
+/* Barra título + dropdown de categorías */
+.inventory-products-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0 10px 0;
+    padding: 0 16px;
+}
+
 #pantalla-INVENTARIO #inventory-products-title {
     font-size: 3em;
     color: #edefed;
     text-align: center;
-    margin-top: 40px;
-    margin-bottom: 20px;
+    margin: 0;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
@@ -2508,41 +2517,42 @@ input[type="number"] {
     box-shadow: none;
 }
 
-/* === DROPDOWN DE CATEGORÍAS === */
+/* === DROPDOWN CATEGORIAS === */
 .categorias-dropdown-wrap {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    margin: 0 auto 16px auto;
-    max-width: 280px;
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
 }
 
 .categorias-dropdown-btn {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: #0c566c;
+    gap: 8px;
+    background: rgba(12, 86, 108, 0.82);
     color: #fff;
-    border: none;
+    border: 2px solid rgba(255,255,255,0.25);
     border-radius: 22px;
-    padding: 10px 22px;
-    font-size: 0.92em;
+    padding: 9px 18px;
+    font-size: 0.88em;
     font-weight: 700;
     cursor: pointer;
-    width: 100%;
-    justify-content: space-between;
-    box-shadow: 0 3px 12px rgba(12, 86, 108, 0.28);
+    white-space: nowrap;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.25);
     transition: background 0.18s, box-shadow 0.18s;
 }
 
 .categorias-dropdown-btn:hover {
-    background: #0a4559;
-    box-shadow: 0 5px 16px rgba(12, 86, 108, 0.38);
+    background: rgba(12, 86, 108, 1);
+    box-shadow: 0 5px 18px rgba(0,0,0,0.32);
 }
 
 .categorias-dropdown-arrow {
-    font-size: 1em;
+    font-size: 0.85em;
     transition: transform 0.22s;
+    opacity: 0.85;
 }
 
 .categorias-dropdown-wrap.abierto .categorias-dropdown-arrow {
@@ -2554,16 +2564,15 @@ input[type="number"] {
     position: absolute;
     top: calc(100% + 8px);
     left: 0;
-    right: 0;
     background: #fff;
     border-radius: 14px;
     border: 1px solid rgba(12, 86, 108, 0.15);
-    box-shadow: 0 8px 28px rgba(12, 86, 108, 0.18);
-    padding: 8px;
-    z-index: 999;
+    box-shadow: 0 8px 28px rgba(12, 86, 108, 0.22);
+    padding: 6px;
+    min-width: 190px;
     flex-direction: column;
-    gap: 4px;
-    min-width: 200px;
+    gap: 2px;
+    z-index: 999;
 }
 
 .categorias-dropdown-wrap.abierto .categorias-dropdown-menu {
@@ -2580,13 +2589,13 @@ input[type="number"] {
     font-weight: 600;
     cursor: pointer;
     text-align: left;
-    transition: background 0.15s, color 0.15s;
     white-space: nowrap;
     width: 100%;
+    transition: background 0.15s, color 0.15s;
 }
 
 .btn-categoria-filtro:hover {
-    background: rgba(12, 86, 108, 0.08);
+    background: rgba(12, 86, 108, 0.09);
     color: #0a4559;
 }
 
@@ -2622,4 +2631,5 @@ input[type="number"] {
 }
 
 @media (max-width: 600px) {
+    .categorias-dropdown-btn { font-size: 0.78em; padding: 7px 13px; }
 }

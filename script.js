@@ -2432,21 +2432,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === DROPDOWN DE CATEGORÍAS ===
+    // === Dropdown de categorias ===
     const dropdownWrap = document.getElementById('categoriasFiltroBar');
     const dropdownBtn  = document.getElementById('categoriasDropdownBtn');
     const dropdownMenu = document.getElementById('categoriasDropdownMenu');
-    const dropdownLabel = document.getElementById('categoriasDropdownLabel');
 
-    // Abrir / cerrar dropdown
     if (dropdownBtn) {
         dropdownBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdownWrap.classList.toggle('abierto');
         });
     }
-
-    // Cerrar al hacer clic fuera
     document.addEventListener('click', () => {
         if (dropdownWrap) dropdownWrap.classList.remove('abierto');
     });
@@ -2454,7 +2450,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dropdownMenu.addEventListener('click', (e) => e.stopPropagation());
     }
 
-    // Filtros de categoría en inventario
+    // Filtros de categoria en inventario
     document.querySelectorAll('.btn-categoria-filtro').forEach(btn => {
         btn.addEventListener('click', () => {
             const esTodas = btn.dataset.categoria === 'todas';
@@ -2474,11 +2470,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.btn-categoria-filtro').forEach(b => b.classList.remove('activo'));
             btn.classList.add('activo');
             categoriaActivaFiltro = btn.dataset.categoria;
-
-            // Actualizar etiqueta del botón del dropdown
-            if (dropdownLabel) dropdownLabel.textContent = btn.textContent.trim();
             if (dropdownWrap) dropdownWrap.classList.remove('abierto');
-
             renderProducts(searchResults);
         });
     });
