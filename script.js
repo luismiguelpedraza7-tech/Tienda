@@ -176,8 +176,7 @@ const EN_IFRAME_PREVIEW = (() => {
 
 // ==========================================
 // CONFIGURACIÓN DE SUPABASE
-const SB_URL = "https://zafaxxdznxtiwfhhiwoo.supabase.co";
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphZmF4eGR6bnh0aXdmaGhpd29vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4OTUwNDcsImV4cCI6MjA5NDQ3MTA0N30.u10ddBd2bvMTEubwV8ZntUO6m_YOawSqrzy_76ByV1c";
+// SB_URL y SB_KEY se cargan desde config.js (no subir a GitHub)
 const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
 // ==========================================
