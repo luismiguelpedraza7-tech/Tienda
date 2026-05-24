@@ -74,6 +74,8 @@
 
 /**
  * Muestra una alerta personalizada. Enter / click = Aceptar.
+ * La alerta NO se cierra sola — siempre espera una acción deliberada del usuario.
+ * Protección de 350ms contra teclas heredadas del contexto anterior.
  * @param {string} mensaje
  * @param {'info'|'success'|'error'|'warn'} [tipo='info']
  * @returns {Promise<void>}
@@ -92,25 +94,44 @@ function mostrarAlerta(mensaje, tipo = 'info') {
                 </div>
             </div>`;
 
+        let puedesCerrar = false;
+
         const cerrar = () => {
+            if (!puedesCerrar) return;          // bloquear cierres prematuros
             overlay.classList.add('cerrando');
             document.removeEventListener('keydown', onKey);
-            setTimeout(() => { document.body.removeChild(overlay); resolve(); }, 170);
+            setTimeout(() => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                resolve();
+            }, 170);
         };
 
         const onKey = (e) => {
-            if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); cerrar(); }
+            if (!puedesCerrar) return;          // ignorar teclas heredadas
+            if (e.key === 'Enter' || e.key === 'Escape') {
+                e.preventDefault();
+                cerrar();
+            }
         };
 
         overlay.querySelector('#__btn-ok').addEventListener('click', cerrar);
         document.addEventListener('keydown', onKey);
         document.body.appendChild(overlay);
-        setTimeout(() => overlay.querySelector('#__btn-ok').focus(), 60);
+
+        // Dar foco al botón y habilitar cierre tras 350ms
+        // (tiempo suficiente para que cualquier keydown previo ya pasó)
+        setTimeout(() => {
+            const btn = overlay.querySelector('#__btn-ok');
+            if (btn) btn.focus();
+            puedesCerrar = true;
+        }, 350);
     });
 }
 
 /**
  * Confirmación personalizada. Enter = Aceptar / Escape = Cancelar.
+ * La confirmación NO se cierra sola — siempre espera una acción deliberada del usuario.
+ * Protección de 350ms contra teclas heredadas del contexto anterior.
  * @param {string} mensaje
  * @param {'warn'|'danger'|'info'} [tipo='warn']
  * @returns {Promise<boolean>}
@@ -130,13 +151,20 @@ function mostrarConfirm(mensaje, tipo = 'warn') {
                 </div>
             </div>`;
 
+        let puedesCerrar = false;
+
         const cerrar = (resultado) => {
+            if (!puedesCerrar) return;          // bloquear cierres prematuros
             overlay.classList.add('cerrando');
             document.removeEventListener('keydown', onKey);
-            setTimeout(() => { document.body.removeChild(overlay); resolve(resultado); }, 170);
+            setTimeout(() => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                resolve(resultado);
+            }, 170);
         };
 
         const onKey = (e) => {
+            if (!puedesCerrar) return;          // ignorar teclas heredadas
             if (e.key === 'Enter') { e.preventDefault(); cerrar(true); }
             if (e.key === 'Escape') { e.preventDefault(); cerrar(false); }
         };
@@ -145,7 +173,13 @@ function mostrarConfirm(mensaje, tipo = 'warn') {
         overlay.querySelector('#__btn-cancel').addEventListener('click', () => cerrar(false));
         document.addEventListener('keydown', onKey);
         document.body.appendChild(overlay);
-        setTimeout(() => overlay.querySelector('#__btn-ok').focus(), 60);
+
+        // Dar foco al botón Aceptar y habilitar cierre tras 350ms
+        setTimeout(() => {
+            const btn = overlay.querySelector('#__btn-ok');
+            if (btn) btn.focus();
+            puedesCerrar = true;
+        }, 350);
     });
 }
 
@@ -176,7 +210,8 @@ const EN_IFRAME_PREVIEW = (() => {
 
 // ==========================================
 // CONFIGURACIÓN DE SUPABASE
-// SB_URL y SB_KEY se cargan desde config.js (no subir a GitHub)
+const SB_URL = "https://zafaxxdznxtiwfhhiwoo.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphZmF4eGR6bnh0aXdmaGhpd29vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4OTUwNDcsImV4cCI6MjA5NDQ3MTA0N30.u10ddBd2bvMTEubwV8ZntUO6m_YOawSqrzy_76ByV1c";
 const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
 // ==========================================
@@ -201,8 +236,8 @@ const btnVolverInicioDesdeVentas = document.querySelector("#btnVolverInicioDesde
 // Referencias para Pantallas de Ventas
 const pantallaVentasFisicas = document.querySelector("#pantalla-ventas-fisicas");
 const pantallaVentasOnline = document.querySelector("#pantalla-ventas-online");
-const btnVolverVentasFisicas = document.querySelector("#btnVolverVentasFisicas");
-const btnVolverVentasOnline = document.querySelector("#btnVolverVentasOnline");
+const btnVolverVentasFisicas = null; // eliminado del HTML — navegación solo por sidebar
+const btnVolverVentasOnline = null;  // eliminado del HTML — navegación solo por sidebar
 
 // Formulario Carrito Ventas
 const inputBuscarProductVenta = document.querySelector("#inputBuscarProductVenta");
@@ -249,7 +284,7 @@ const btnLimpiarFormulario = document.querySelector("#btnLimpiarFormulario");
 const contenedorProductos = document.querySelector("#contenedorProductos");
 const templateTarjetaProducto = document.querySelector("#template-tarjeta-producto");
 
-const btnVolverInicio = document.querySelector("#btnVolverInicio");
+const btnVolverInicio = null; // eliminado del HTML — navegación solo por sidebar
 
 const inputBuscarProducto = document.querySelector("#inputBuscarProducto");
 const btnBuscarProducto = document.querySelector("#btnBuscarProducto");
@@ -293,11 +328,7 @@ async function loadInventory() {
     if (error) {
         console.error("Error cargando inventario:", error);
     } else {
-        inventory = data.map(p => ({
-            ...p,
-            codigoBarras: p.codigo_barras,
-            imagen: p.imagen_url
-        }));
+        inventory = data; 
         renderProducts();
         updateProductCount();
     }
@@ -559,10 +590,40 @@ function showScreen(screenId, pushToHistory = true) {
     document.querySelectorAll(
         '#pantalla-login, #pantalla-inicio, #pantalla-menu-ventas, ' +
         '#pantalla-INVENTARIO, #pantalla-ventas-fisicas, #pantalla-historial-fisicas, ' +
-        '#pantalla-ventas-online, #pantalla-historial-online'
+        '#pantalla-ventas-online, #pantalla-historial-online, #pantalla-estadisticas, ' +
+        '#pantalla-estadisticas-online, #pantalla-combos'
     ).forEach(function(el) {
         el.classList.remove('activa');
     });
+
+    // Gestionar visibilidad del sidebar global
+    const sidebar = document.getElementById('sidebar-menu');
+    const pantallasSinSidebar = ['pantalla-login', 'pantalla-menu-ventas'];
+    if (sidebar) {
+        if (pantallasSinSidebar.includes(screenId)) {
+            sidebar.classList.remove('activo');
+        } else {
+            sidebar.classList.add('activo');
+        }
+    }
+
+    // Marcar ítem activo en sidebar
+    const mapaActivoSidebar = {
+        'pantalla-INVENTARIO':           'btn-Inventario',
+        'pantalla-ventas-fisicas':       'btn-Menu-Ventas-Fisicas',
+        'pantalla-historial-fisicas':    'btn-Menu-Ventas-Fisicas',
+        'pantalla-ventas-online':        'btn-Menu-Ventas-Online',
+        'pantalla-historial-online':     'btn-Menu-Ventas-Online',
+        'pantalla-estadisticas':         'btn-Estadisticas',
+        'pantalla-estadisticas-online':  'btn-EstadisticasOnline',
+        'pantalla-combos':               'btn-Combos',
+    };
+    document.querySelectorAll('.sidebar-boton').forEach(function(b) { b.classList.remove('sidebar-activo'); });
+    const btnActivoId = mapaActivoSidebar[screenId];
+    if (btnActivoId) {
+        const btnActivo = document.getElementById(btnActivoId);
+        if (btnActivo) btnActivo.classList.add('sidebar-activo');
+    }
 
     // Muestra la pantalla pedida y vuelve al tope
     function show(el) {
@@ -625,6 +686,24 @@ function showScreen(screenId, pushToHistory = true) {
             renderSalesHistory();
             break;
         }
+        case 'pantalla-estadisticas': {
+            var pe = document.querySelector('#pantalla-estadisticas');
+            show(pe);
+            initEstadisticas();
+            break;
+        }
+        case 'pantalla-estadisticas-online': {
+            var peo = document.querySelector('#pantalla-estadisticas-online');
+            show(peo);
+            initEstadisticasOnline();
+            break;
+        }
+        case 'pantalla-combos': {
+            var pc = document.querySelector('#pantalla-combos');
+            show(pc);
+            renderCombos();
+            break;
+        }
     }
 
     if (pushToHistory) {
@@ -638,14 +717,32 @@ async function checkAuthStatus(pushToHistory = true) {
     
     if (session) {
         currentLoggedInUserEmail = session.user.email;
-        currentUserId = session.user.id; // <-- guardamos el user_id
+        currentUserId = session.user.id;
+
+        // ---- Perfil sidebar ----
+        const meta = session.user.user_metadata || {};
+        const avatarUrl = meta.avatar_url || meta.picture || '';
+        const fullName  = meta.full_name || meta.name || currentLoggedInUserEmail;
+
+        const avatarEl = document.getElementById('sidebar-user-avatar');
+        const nameEl   = document.getElementById('sidebar-user-name');
+        const emailEl  = document.getElementById('sidebar-user-email');
+
+        if (avatarEl) avatarEl.src = avatarUrl || 'https://ui-avatars.com/api/?background=0c566c&color=fff&name=' + encodeURIComponent(fullName);
+        if (nameEl)   nameEl.textContent  = fullName;
+        if (emailEl)  emailEl.textContent = currentLoggedInUserEmail;
+        // ------------------------
+
         if (pushToHistory) try { history.replaceState({ screen: 'pantalla-inicio' }, '', '#pantalla-inicio'); } catch(e) {}
         showScreen('pantalla-inicio', false); 
         loadInventory(); 
-        loadSales(); // <-- Ahora carga desde Supabase
+        loadSales();
     } else {
         currentLoggedInUserEmail = null;
         currentUserId = null;
+        // Ocultar sidebar al cerrar sesión
+        const sidebar = document.getElementById('sidebar-menu');
+        if (sidebar) sidebar.classList.remove('activo');
         if (pushToHistory) try { history.replaceState({ screen: 'pantalla-login' }, '', '#pantalla-login'); } catch(e) {}
         showScreen('pantalla-login', false);
     }
@@ -667,17 +764,22 @@ btnInventario.addEventListener("click", function(e) {
   showScreen('pantalla-INVENTARIO');
 });
 
-btnVolverInicio.addEventListener("click", function() {
-  showScreen('pantalla-inicio');
-});
-
-if (btnVentas) {
-    btnVentas.addEventListener("click", function(e) {
-        e.preventDefault();
-        showScreen('pantalla-menu-ventas');
+// btnVolverInicio fue eliminado del HTML — navegación solo por sidebar
+if (btnVolverInicio) {
+    btnVolverInicio.addEventListener("click", function() {
+        showScreen('pantalla-inicio');
     });
 }
 
+// btn-Ventas ya no existe (eliminado del HTML), solo por compatibilidad
+if (btnVentas) {
+    btnVentas.addEventListener("click", function(e) {
+        e.preventDefault();
+        showScreen('pantalla-ventas-fisicas');
+    });
+}
+
+// Sidebar: Ventas Físicas — navega directo sin pantalla-menu-ventas
 if (btnMenuVentasFisicas) {
     btnMenuVentasFisicas.addEventListener("click", function(e) {
         e.preventDefault();
@@ -685,11 +787,41 @@ if (btnMenuVentasFisicas) {
     });
 }
 
+// Sidebar: Ventas Online — navega directo sin pantalla-menu-ventas
 if (btnMenuVentasOnline) {
     btnMenuVentasOnline.addEventListener("click", function(e) {
         e.preventDefault();
         showScreen('pantalla-ventas-online');
         cargarPedidosAdmin();
+    });
+}
+
+// Sidebar: Estadísticas Ventas Físicas
+const btnEstadisticas = document.getElementById('btn-Estadisticas');
+if (btnEstadisticas) {
+    btnEstadisticas.addEventListener("click", function(e) {
+        e.preventDefault();
+        showScreen('pantalla-estadisticas');
+    });
+}
+
+// Sidebar: Estadísticas Ventas Online
+const btnEstadisticasOnline = document.getElementById('btn-EstadisticasOnline');
+if (btnEstadisticasOnline) {
+    btnEstadisticasOnline.addEventListener("click", function(e) {
+        e.preventDefault();
+        showScreen('pantalla-estadisticas-online');
+    });
+}
+
+
+
+// Sidebar: Combos
+const btnCombos = document.getElementById('btn-Combos');
+if (btnCombos) {
+    btnCombos.addEventListener("click", function(e) {
+        e.preventDefault();
+        showScreen('pantalla-combos');
     });
 }
 
@@ -702,13 +834,13 @@ if (btnVolverInicioDesdeVentas) {
 
 if (btnVolverVentasFisicas) {
     btnVolverVentasFisicas.addEventListener("click", function() {
-        showScreen('pantalla-menu-ventas');
+        showScreen('pantalla-inicio');
     });
 }
 
 if (btnVolverVentasOnline) {
     btnVolverVentasOnline.addEventListener("click", function() {
-        showScreen('pantalla-menu-ventas');
+        showScreen('pantalla-inicio');
     });
 }
 
@@ -1035,6 +1167,24 @@ inputBuscarProductVenta.addEventListener("keydown", function(event) {
 window.eliminarTicket = async function(ticketGlobalId) {
     if(!await mostrarConfirm("¿Estás seguro de eliminar este ticket? Los productos volverán al inventario.", 'danger')) return;
 
+    // En modo offline solo eliminar localmente (no hay cómo revertir en Supabase)
+    if (modoOffline) {
+        const sale = sales.find(s => s.globalId === ticketGlobalId);
+        if (sale) {
+            // Reponer stock visualmente
+            for (const item of (sale.items || [])) {
+                const prod = inventory.find(p => p.id && p.id.toString() === item.productId?.toString());
+                if (prod) prod.cantidad += item.qty;
+            }
+            sales = sales.filter(s => s.globalId !== ticketGlobalId);
+            await guardarInventarioCache();
+            updateSalesDropdown();
+            renderSalesHistory();
+        }
+        await mostrarAlerta("Ticket eliminado localmente. El stock fue repuesto en la vista.", 'success');
+        return;
+    }
+
     try {
         const sale = sales.find(s => s.globalId === ticketGlobalId);
         if (!sale) return;
@@ -1094,43 +1244,55 @@ if (btnRegistrarVenta) {
                 });
             }
             // Descuento local inmediato en `inventory` (respaldo visual)
-            // El trigger fn_descontar_inventario() de Supabase también lo hace en BD.
             for (let item of currentCart) {
                 const prod = inventory.find(p => p.id.toString() === item.id.toString());
                 if (prod) prod.cantidad -= item.qty;
             }
-            updateSalesDropdown(); // refleja stock actualizado de inmediato
+            updateSalesDropdown();
 
-            const numeroTicket = await generarNumeroTicket(); // <-- ahora es async
+            // En offline no llamamos a Supabase — generamos ID local con timestamp
+            let numeroTicket;
+            if (modoOffline) {
+                const ahora = new Date();
+                const hhmm = String(ahora.getHours()).padStart(2,'0') + String(ahora.getMinutes()).padStart(2,'0');
+                numeroTicket = 'OFF-' + hhmm + '-' + String(Date.now()).slice(-4);
+            } else {
+                numeroTicket = await generarNumeroTicket();
+            }
 
             const newSale = {
                 globalId:    Date.now(), 
-                id:          `V-${numeroTicket}`,   // prefijo V- para distinguir de ONLINE-
+                id:          `V-${numeroTicket}`,
                 total:       totalSale,
                 date:        saleDateStr,
                 fechaLimpia: soloFechaStr, 
                 items:       cartItemsForReceipt 
             };
 
-            // Guardar en Supabase (reemplaza saveSales con localStorage).
-            // El trigger fn_descontar_inventario() descuenta el stock automáticamente.
-            const ventaGuardada = await saveSale(newSale);
-            newSale.supabaseId = ventaGuardada.id;
-            sales.unshift(newSale); // Añadir al inicio del array local
-
-            // Recargamos inventario desde Supabase para reflejar las cantidades reales
-            // actualizadas por el trigger (fuente de verdad).
-            await loadInventory();
-            renderSalesHistory();
-
-            if (await mostrarConfirm("¿Desea imprimir la factura de esta venta?", 'info')) {
-                 imprimirFacturaTicket(newSale);
+            if (modoOffline) {
+                // MODO OFFLINE: guardar en IndexedDB
+                await guardarVentaOffline(newSale);
+                sales.unshift(newSale);
+                renderSalesHistory();
+                if (await mostrarConfirm("¿Desea imprimir la factura de esta venta?", 'info')) {
+                    imprimirFacturaTicket(newSale);
+                }
+                limpiarTodaLaVenta();
+                await mostrarAlerta(`✅ Venta guardada localmente.\nTicket #${newSale.id} por $${totalSale.toLocaleString('es-CO')}\nSe sincronizará con Supabase cuando actives el modo en línea.`, 'success');
+            } else {
+                // MODO ONLINE: guardar en Supabase
+                const ventaGuardada = await saveSale(newSale);
+                newSale.supabaseId = ventaGuardada.id;
+                sales.unshift(newSale);
+                await loadInventory();
+                renderSalesHistory();
+                if (await mostrarConfirm("¿Desea imprimir la factura de esta venta?", 'info')) {
+                    imprimirFacturaTicket(newSale);
+                }
+                limpiarTodaLaVenta();
+                if(inputBuscarProductVenta) inputBuscarProductVenta.focus();
+                await mostrarAlerta(`¡Venta registrada con éxito!\nTicket #${newSale.id} por $${totalSale.toLocaleString('es-CO')}`, 'success');
             }
-
-            limpiarTodaLaVenta();
-            if(inputBuscarProductVenta) inputBuscarProductVenta.focus();
-
-            await mostrarAlerta(`¡Venta registrada con éxito!\nTicket #${newSale.id} por $${totalSale.toLocaleString('es-CO')}`, 'success');
 
         } catch (err) {
             console.error("Error al registrar venta:", err);
@@ -1157,6 +1319,7 @@ function renderSalesHistory() {
         listaVentasHoyEl.innerHTML = '';
         const hoy = new Date().toLocaleDateString();
         const ventasDeHoy = sales.filter(s => {
+            if (s.id && String(s.id).startsWith('ONLINE-')) return false;
             const f = s.fechaLimpia || (s.date ? s.date.split(',')[0].trim() : '');
             return f === hoy;
         });
@@ -1187,6 +1350,8 @@ function renderSalesHistory() {
     const ventasPasadas = {};
 
     sales.forEach(sale => {
+        // Excluir ventas online del historial físico
+        if (sale.id && String(sale.id).startsWith('ONLINE-')) return;
         // Normalizar fecha: preferir fechaLimpia (toLocaleDateString guardado en BD)
         // Si no existe, extraer la parte de fecha del string completo
         const fechaVenta = sale.fechaLimpia
@@ -1238,30 +1403,53 @@ function renderSalesHistory() {
     }
 }
 
+// ──────────────────────────────────────────────────────
+// TICKET VENTAS FÍSICAS — identificador visual claro
+// Clase CSS: venta-ticket-fisica | Badge: 🛒 Venta Física
+// ──────────────────────────────────────────────────────
 function crearDOMTicket(sale, esDeHoy) {
     const ticketDiv = document.createElement('div');
-    ticketDiv.className = 'venta-ticket';
-    
-    let itemsHtml = '<ul>';
-    sale.items.forEach(item => {
-        itemsHtml += `<li><span>${item.qty}x ${item.name}</span> <span>$${item.subtotal}</span></li>`;
-    });
+    ticketDiv.className = 'venta-ticket venta-ticket-fisica';
+    ticketDiv.dataset.tipo = 'fisica';
+
+    let itemsHtml = '<ul class="ticket-items-list">';
+    if (sale.items && sale.items.length > 0) {
+        sale.items.forEach(item => {
+            const sub = Number(item.subtotal).toLocaleString('es-CO');
+            itemsHtml += `<li class="ticket-item-row">
+                <span class="ticket-item-name">${item.qty}x ${item.name}</span>
+                <span class="ticket-item-sub">$${sub}</span>
+            </li>`;
+        });
+    } else {
+        itemsHtml += '<li>Sin detalle de productos.</li>';
+    }
     itemsHtml += '</ul>';
 
-    const botonEliminarHtml = esDeHoy ? `<button class="btn-eliminar-ticket" onclick="eliminarTicket(${sale.globalId}); event.stopPropagation();">✖ Eliminar</button>` : '';
+    const esOffline = String(sale.id).includes('OFF-');
+    const badgeOffline = esOffline
+        ? '<span class="ticket-badge ticket-badge-offline">⚡ Local</span>'
+        : '';
+    const botonEliminarHtml = esDeHoy
+        ? `<button class="btn-eliminar-ticket" onclick="eliminarTicket(${sale.globalId}); event.stopPropagation();">✖ Eliminar</button>`
+        : '';
+    const totalFmt = Number(sale.total).toLocaleString('es-CO');
+    const horaStr = sale.date ? (sale.date.split(',')[1] || sale.date).trim() : '';
 
     ticketDiv.innerHTML = `
         <div class="venta-ticket-header">
-            <div style="text-align: left;">
-                <strong>Ticket #${sale.id}</strong>
-                <span class="fecha-venta">${sale.date.split(',')[1] || sale.date}</span>
-            </div>
-            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
-                <div style="display:flex; align-items:center;">
-                    <strong>$${sale.total}</strong>
-                    ${botonEliminarHtml}
+            <div class="ticket-header-left">
+                <div class="ticket-badges-row">
+                    <span class="ticket-badge ticket-badge-fisica">🛒 Venta Física</span>
+                    ${badgeOffline}
                 </div>
-                <span style="font-size: 0.8em; color: #007bff;">Ver detalles ▼</span>
+                <strong class="ticket-numero">${sale.id}</strong>
+                <span class="fecha-venta">${horaStr}</span>
+            </div>
+            <div class="ticket-header-right">
+                <strong class="ticket-total">$${totalFmt}</strong>
+                ${botonEliminarHtml}
+                <span class="ticket-toggle-arrow">Ver detalles ▼</span>
             </div>
         </div>
         <div class="venta-ticket-details">
@@ -1271,11 +1459,10 @@ function crearDOMTicket(sale, esDeHoy) {
 
     ticketDiv.querySelector('.venta-ticket-header').addEventListener('click', () => {
         const details = ticketDiv.querySelector('.venta-ticket-details');
-        if (details.style.display === 'block') {
-            details.style.display = 'none';
-        } else {
-            details.style.display = 'block';
-        }
+        const arrow = ticketDiv.querySelector('.ticket-toggle-arrow');
+        const open = details.style.display === 'block';
+        details.style.display = open ? 'none' : 'block';
+        if (arrow) arrow.textContent = open ? 'Ver detalles ▼' : 'Ocultar ▲';
     });
 
     return ticketDiv;
@@ -1445,7 +1632,7 @@ async function subirImagenSupabase(archivo) {
 
     const { data, error } = await supabaseClient
         .storage
-        .from('productos-imagenes')
+        .from('productos')
         .upload(rutaArchivo, archivoParaSubir);
 
     if (error) {
@@ -1456,7 +1643,7 @@ async function subirImagenSupabase(archivo) {
 
     const { data: publicUrlData } = await supabaseClient
         .storage
-        .from('productos-imagenes')
+        .from('productos')
         .getPublicUrl(rutaArchivo);
 
     return publicUrlData.publicUrl;
@@ -1534,9 +1721,9 @@ async function handleSaveProduct() {
             const { error } = await supabaseClient
                 .from('productos')
                 .update({ 
-                    codigo_barras: codigo, 
+                    "codigoBarras": codigo, 
                     nombre, precio, cantidad, 
-                    imagen_url: urlImagenFinal, 
+                    imagen: urlImagenFinal, 
                     categoria 
                 })
                 .eq('id', editingProductId);
@@ -1551,9 +1738,9 @@ async function handleSaveProduct() {
             const { error } = await supabaseClient
                 .from('productos')
                 .insert([{ 
-                    codigo_barras: codigo,
+                    "codigoBarras": codigo,
                     nombre, precio, cantidad, 
-                    imagen_url: urlImagenFinal, 
+                    imagen: urlImagenFinal, 
                     user_id: user.id,
                     categoria
                 }]);
@@ -1755,48 +1942,25 @@ btnExportarDatos.addEventListener("click", exportInventoryToCSV);
 // INTEGRACIÓN DE INICIO DE SESIÓN CON SUPABASE
 // ==========================================
 async function handleLoginWithGoogle() {
-    if (btnGoogle) {
-        btnGoogle.disabled = true;
-        btnGoogle.textContent = 'Conectando con Google...';
-    }
-
     const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-            redirectTo: window.location.origin + window.location.pathname
-        }
+        options: { redirectTo: "https://franklin-2000.github.io/tienda-online/" } 
     });
-
     if (error) {
         console.error('Error al iniciar sesión con Google:', error);
-        await mostrarAlerta('No se pudo conectar con Google:\n' + error.message, 'error');
-        if (btnGoogle) {
-            btnGoogle.disabled = false;
-            btnGoogle.innerHTML = `
-                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                    <path fill="none" d="M0 0h48v48H0z"></path>
-                </svg>
-                Continuar con Google`;
-        }
+    } else {
+        console.log('Redirigiendo a Google para autenticación...');
     }
 }
 
 async function handleLogout() {
-    const confirmado = await mostrarConfirm('¿Deseas cerrar sesión?', 'warn');
-    if (!confirmado) return;
-
     const { error } = await supabaseClient.auth.signOut();
     if (!error) {
-        inventory = [];
+        inventory = []; 
         sales = [];
-        currentCart = [];
         currentUserId = null;
-        currentLoggedInUserEmail = null;
         showScreen('pantalla-login');
+        mostrarAlerta("Sesión cerrada correctamente.", 'info');
     } else {
         console.error("Error al cerrar sesión:", error);
         mostrarAlerta("Hubo un error al cerrar la sesión.", 'error');
@@ -1804,37 +1968,35 @@ async function handleLogout() {
 }
 
 if (btnGoogle) btnGoogle.addEventListener("click", handleLoginWithGoogle);
-if (btnLogout) btnLogout.addEventListener("click", handleLogout);
+btnLogout.addEventListener("click", handleLogout);
 
 // ==========================================
-// ESCUCHAR CAMBIOS DE SESIÓN EN TIEMPO REAL
+// BOTÓN ACTUALIZAR (sidebar)
 // ==========================================
-supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' && session) {
-        currentLoggedInUserEmail = session.user.email;
-        currentUserId = session.user.id;
-        if (!EN_IFRAME_PREVIEW) {
-            showScreen('pantalla-inicio', false);
-            loadInventory();
-            loadSales();
-        }
-    } else if (event === 'SIGNED_OUT') {
-        currentLoggedInUserEmail = null;
-        currentUserId = null;
-        inventory = [];
-        sales = [];
-        currentCart = [];
-        if (!EN_IFRAME_PREVIEW) {
-            showScreen('pantalla-login', false);
-        }
-    }
-});
+(function() {
+    const btnActualizar = document.getElementById('btnActualizar');
+    if (!btnActualizar) return;
+    btnActualizar.addEventListener('click', function() {
+        btnActualizar.classList.add('girando');
+        setTimeout(function() { btnActualizar.classList.remove('girando'); }, 520);
+        const pantallaActiva = document.querySelector(
+            '#pantalla-inicio.activa, #pantalla-INVENTARIO.activa, ' +
+            '#pantalla-ventas-fisicas.activa, #pantalla-historial-fisicas.activa, ' +
+            '#pantalla-ventas-online.activa, #pantalla-historial-online.activa, ' +
+            '#pantalla-estadisticas.activa, #pantalla-estadisticas-online.activa, ' +
+            '#pantalla-combos.activa'
+        );
+        if (pantallaActiva) showScreen(pantallaActiva.id, false);
+    });
+})();
 
 // ==========================================
 // INICIALIZACIÓN DE LA APP
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     if (EN_IFRAME_PREVIEW) {
+        // Modo previsualizador (ej: Yachai Codex): mostrar pantalla de inicio directamente
+        // sin pasar por Supabase, para que la previsualización funcione correctamente.
         showScreen('pantalla-inicio', false);
     } else {
         checkAuthStatus();
@@ -1940,6 +2102,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let pedidosAdmin      = [];
 let filtroEstadoAdmin = 'todos';
+const btnBorrarTodasVentasCanceladas = document.querySelector('#btnBorrarTodasVentasCanceladas');
  
  
 // ---------------------------------------------------------------
@@ -2363,38 +2526,53 @@ function renderHistorialOnline() {
 // ---------------------------------------------------------------
 // Crear ticket de pedido para el historial
 // ---------------------------------------------------------------
+// ──────────────────────────────────────────────────────
+// TICKET VENTAS ONLINE — identificador visual claro
+// Clase CSS: venta-ticket-online | Badge: 🌐 Pedido Online
+// ──────────────────────────────────────────────────────
 function crearDOMTicketOnline(pedido, esDeHoy) {
     const ticketDiv = document.createElement('div');
-    ticketDiv.className = 'venta-ticket';
-    
-    let itemsHtml = '<ul style="list-style: none; padding: 0;">';
+    ticketDiv.className = 'venta-ticket venta-ticket-online';
+    ticketDiv.dataset.tipo = 'online';
+
+    let itemsHtml = '<ul class="ticket-items-list">';
     (pedido.items_pedido || []).forEach(item => {
-        itemsHtml += `<li style="border-bottom: 1px solid #eee; padding: 5px 0;"><span>${item.cantidad}x ${item.nombre}</span> <span style="float:right;">$${Number(item.subtotal).toLocaleString('es-CO')}</span></li>`;
+        const sub = Number(item.subtotal).toLocaleString('es-CO');
+        itemsHtml += `<li class="ticket-item-row">
+            <span class="ticket-item-name">${item.cantidad}x ${item.nombre}</span>
+            <span class="ticket-item-sub">$${sub}</span>
+        </li>`;
     });
     itemsHtml += '</ul>';
 
     const fecha = new Date(pedido.fecha).toLocaleString('es-CO');
+    const totalFmt = Number(pedido.total).toLocaleString('es-CO');
+    const metodoBadge = pedido.metodo_pago === 'contraentrega'
+        ? '<span class="ticket-badge ticket-badge-contraentrega">💵 Contra entrega</span>'
+        : '<span class="ticket-badge ticket-badge-online-pago">💳 Pago online</span>';
 
     ticketDiv.innerHTML = `
         <div class="venta-ticket-header">
-            <div style="text-align: left;">
-                <strong>Pedido #${pedido.id}</strong>
+            <div class="ticket-header-left">
+                <div class="ticket-badges-row">
+                    <span class="ticket-badge ticket-badge-online">🌐 Pedido Online</span>
+                    ${metodoBadge}
+                </div>
+                <strong class="ticket-numero">Pedido #${pedido.id}</strong>
                 <span class="fecha-venta">${fecha}</span>
             </div>
-            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
-                <div style="display:flex; align-items:center;">
-                    <strong>$${Number(pedido.total).toLocaleString('es-CO')}</strong>
-                </div>
-                <span style="font-size: 0.8em; color: #007bff;">Ver detalles ▼</span>
+            <div class="ticket-header-right">
+                <strong class="ticket-total">$${totalFmt}</strong>
+                <span class="ticket-toggle-arrow">Ver detalles ▼</span>
             </div>
         </div>
         <div class="venta-ticket-details">
-            <div style="margin-bottom: 10px;">
-                <strong>Cliente:</strong> ${pedido.cliente_nombre} <br>
-                <strong>Email:</strong> ${pedido.cliente_email} <br>
-                <strong>Teléfono:</strong> ${pedido.cliente_tel} <br>
-                <strong>Dirección:</strong> ${pedido.direccion} <br>
-                ${pedido.notas ? `<strong>Notas:</strong> ${pedido.notas} <br>` : ''}
+            <div class="ticket-cliente-info">
+                <div><span class="ticket-info-label">👤 Cliente:</span> ${pedido.cliente_nombre}</div>
+                <div><span class="ticket-info-label">📧 Email:</span> ${pedido.cliente_email}</div>
+                <div><span class="ticket-info-label">📞 Teléfono:</span> ${pedido.cliente_tel}</div>
+                <div><span class="ticket-info-label">📍 Dirección:</span> ${pedido.direccion}</div>
+                ${pedido.notas ? `<div><span class="ticket-info-label">📝 Notas:</span> ${pedido.notas}</div>` : ''}
             </div>
             ${itemsHtml}
         </div>
@@ -2402,11 +2580,10 @@ function crearDOMTicketOnline(pedido, esDeHoy) {
 
     ticketDiv.querySelector('.venta-ticket-header').addEventListener('click', () => {
         const details = ticketDiv.querySelector('.venta-ticket-details');
-        if (details.style.display === 'block') {
-            details.style.display = 'none';
-        } else {
-            details.style.display = 'block';
-        }
+        const arrow = ticketDiv.querySelector('.ticket-toggle-arrow');
+        const open = details.style.display === 'block';
+        details.style.display = open ? 'none' : 'block';
+        if (arrow) arrow.textContent = open ? 'Ver detalles ▼' : 'Ocultar ▲';
     });
 
     return ticketDiv;
@@ -2419,6 +2596,929 @@ function crearDOMTicketOnline(pedido, esDeHoy) {
 // ---------------------------------------------------------------
 // Eventos de filtros y botón refrescar
 // ---------------------------------------------------------------
+
+// ============================================================
+// MÓDULO: ESTADÍSTICAS
+// ============================================================
+let chartTendencia = null;
+let chartProductos = null;
+let chartCategorias = null;
+let chartIngresos   = null;
+let periodoActivo   = 'diaria';
+
+function initEstadisticas() {
+    // Registrar listeners de período (solo 1 vez)
+    document.querySelectorAll('.btn-period').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.btn-period').forEach(b => b.classList.remove('activo'));
+            btn.classList.add('activo');
+            periodoActivo = btn.dataset.period;
+            renderEstadisticas(periodoActivo);
+        };
+    });
+
+    // Botón volver
+    const btnVolver = document.getElementById('btnVolverDesdeEstadisticas');
+    if (btnVolver) btnVolver.onclick = () => showScreen('pantalla-inicio');
+
+    renderEstadisticas(periodoActivo);
+}
+
+function parsearFechaVenta(venta) {
+    // globalId puede ser epoch en MILISEGUNDOS (ventas físicas: Date.now())
+    // o en SEGUNDOS (ventas ONLINE: EXTRACT(EPOCH FROM NOW()) en Supabase)
+    if (venta.globalId) {
+        const gid = Number(venta.globalId);
+        if (gid > 1000000000000) {
+            // milisegundos (ventas físicas JS)
+            return new Date(gid);
+        } else if (gid > 1000000000) {
+            // segundos (ventas ONLINE desde Supabase) → convertir a ms
+            return new Date(gid * 1000);
+        }
+    }
+    // fechaLimpia puede venir en varios formatos:
+    //   - "16/5/2026"   (toLocaleDateString del navegador, ventas físicas)
+    //   - "16/05/2026"  (TO_CHAR Supabase, ventas ONLINE)
+    if (venta.fechaLimpia) {
+        const partes = venta.fechaLimpia.split('/');
+        if (partes.length === 3) {
+            const dia  = parseInt(partes[0], 10);
+            const mes  = parseInt(partes[1], 10) - 1; // 0-indexed
+            const anio = parseInt(partes[2], 10);
+            const d = new Date(anio, mes, dia);
+            if (!isNaN(d)) return d;
+        }
+    }
+    // Fallback: intentar parsear venta.date directamente
+    const d = new Date(venta.date);
+    if (!isNaN(d)) return d;
+    return null;
+}
+
+function filtrarVentasPorPeriodo(periodo) {
+    const ahora = new Date();
+    const hoyStr = ahora.toLocaleDateString(); // mismo formato que fechaLimpia
+    return sales.filter(venta => {
+        // Excluir ventas online de las estadísticas físicas
+        if (venta.id && String(venta.id).startsWith('ONLINE-')) return false;
+        // Para 'diaria': comparar strings directamente (más confiable)
+        if (periodo === 'diaria') {
+            const fl = venta.fechaLimpia || '';
+            if (fl === hoyStr) return true;
+            // Fallback con globalId (timestamp)
+            if (venta.globalId && venta.globalId > 1000000000000) {
+                return new Date(venta.globalId).toDateString() === ahora.toDateString();
+            }
+            return false;
+        }
+        const fechaVenta = parsearFechaVenta(venta);
+        if (!fechaVenta) return false;
+        if (periodo === 'semanal') {
+            const inicioSemana = new Date(ahora);
+            inicioSemana.setDate(ahora.getDate() - ahora.getDay());
+            inicioSemana.setHours(0,0,0,0);
+            return fechaVenta >= inicioSemana;
+        } else if (periodo === 'mensual') {
+            return fechaVenta.getMonth() === ahora.getMonth() &&
+                   fechaVenta.getFullYear() === ahora.getFullYear();
+        }
+        return false;
+    });
+}
+
+function filtrarVentasPorPeriodoAnterior(periodo) {
+    const ahora = new Date();
+    const ayer = new Date(ahora);
+    ayer.setDate(ahora.getDate() - 1);
+    const ayerStr = ayer.toLocaleDateString();
+    return sales.filter(venta => {
+        if (venta.id && String(venta.id).startsWith('ONLINE-')) return false;
+        if (periodo === 'diaria') {
+            const fl = venta.fechaLimpia || '';
+            if (fl === ayerStr) return true;
+            if (venta.globalId && venta.globalId > 1000000000000) {
+                return new Date(venta.globalId).toDateString() === ayer.toDateString();
+            }
+            return false;
+        }
+        const fechaVenta = parsearFechaVenta(venta);
+        if (!fechaVenta) return false;
+        if (periodo === 'semanal') {
+            const inicioSemanaAnterior = new Date(ahora);
+            inicioSemanaAnterior.setDate(ahora.getDate() - ahora.getDay() - 7);
+            inicioSemanaAnterior.setHours(0,0,0,0);
+            const finSemanaAnterior = new Date(inicioSemanaAnterior);
+            finSemanaAnterior.setDate(inicioSemanaAnterior.getDate() + 7);
+            return fechaVenta >= inicioSemanaAnterior && fechaVenta < finSemanaAnterior;
+        } else if (periodo === 'mensual') {
+            const mesAnterior = ahora.getMonth() === 0 ? 11 : ahora.getMonth() - 1;
+            const anioAnterior = ahora.getMonth() === 0 ? ahora.getFullYear() - 1 : ahora.getFullYear();
+            return fechaVenta.getMonth() === mesAnterior && fechaVenta.getFullYear() === anioAnterior;
+        }
+        return false;
+    });
+}
+
+function renderEstadisticas(periodo) {
+    const ventasFiltradas = filtrarVentasPorPeriodo(periodo);
+
+    // Calcular período anterior para comparar
+    const ventasAnteriores = filtrarVentasPorPeriodoAnterior(periodo);
+
+    // --- KPIs ---
+    const totalVentas      = ventasFiltradas.reduce((s,v) => s + (v.total || 0), 0);
+    const numTransacciones = ventasFiltradas.length;
+    const totalProductos   = ventasFiltradas.reduce((s,v) => s + v.items.reduce((a,i) => a + (i.qty||0), 0), 0);
+    const ticketPromedio   = numTransacciones > 0 ? totalVentas / numTransacciones : 0;
+
+    const totalAnt      = ventasAnteriores.reduce((s,v) => s + (v.total || 0), 0);
+    const transAnt      = ventasAnteriores.length;
+    const prodAnt       = ventasAnteriores.reduce((s,v) => s + v.items.reduce((a,i) => a + (i.qty||0), 0), 0);
+    const ticketAnt     = transAnt > 0 ? totalAnt / transAnt : 0;
+
+    const fmt = v => '$' + Math.round(v).toLocaleString('es-CO');
+    document.getElementById('kpi-total-ventas').textContent      = fmt(totalVentas);
+    document.getElementById('kpi-num-transacciones').textContent  = numTransacciones;
+    document.getElementById('kpi-productos-vendidos').textContent = totalProductos;
+    document.getElementById('kpi-ticket-promedio').textContent    = fmt(ticketPromedio);
+
+    // Etiqueta del período
+    const labelMap = { diaria: 'Resumen de hoy', semanal: 'Esta semana', mensual: 'Este mes' };
+    const subLabel = document.getElementById('stats-fecha-label');
+    if (subLabel) subLabel.textContent = labelMap[periodo] || '';
+
+    // Trends
+    function setTrend(elId, compareId, actual, anterior) {
+        const el = document.getElementById(elId);
+        const elc = document.getElementById(compareId);
+        if (!el) return;
+        if (anterior === 0 && actual === 0) {
+            el.textContent = '—';
+            el.className = 'kpi-trend';
+            if (elc) elc.textContent = 'Sin datos del período anterior';
+            return;
+        }
+        if (anterior === 0) {
+            el.textContent = '🆕 Nuevo';
+            el.className = 'kpi-trend positivo';
+            if (elc) elc.textContent = 'Primera vez en este período';
+            return;
+        }
+        const pct = Math.round(((actual - anterior) / anterior) * 100);
+        el.textContent = (pct >= 0 ? '▲ ' : '▼ ') + Math.abs(pct) + '%';
+        el.className = 'kpi-trend ' + (pct >= 0 ? 'positivo' : 'negativo');
+        const antLabel = anterior > 1000 ? fmt(anterior) : anterior + (compareId.includes('ventas') || compareId.includes('ticket') ? '' : ' uds');
+        if (elc) elc.textContent = 'Período anterior: ' + (anterior > 100 ? fmt(anterior) : anterior);
+    }
+    setTrend('kpi-trend-ventas',  'kpi-compare-ventas',  totalVentas,      totalAnt);
+    setTrend('kpi-trend-trans',   'kpi-compare-trans',   numTransacciones,  transAnt);
+    setTrend('kpi-trend-prod',    'kpi-compare-prod',    totalProductos,    prodAnt);
+    setTrend('kpi-trend-ticket',  'kpi-compare-ticket',  ticketPromedio,    ticketAnt);
+
+    // --- Agrupar productos más vendidos ---
+    const prodMap = {};
+    const prodIngresos = {};
+    ventasFiltradas.forEach(v => v.items.forEach(i => {
+        prodMap[i.name]      = (prodMap[i.name] || 0) + (i.qty || 0);
+        prodIngresos[i.name] = (prodIngresos[i.name] || 0) + (i.subtotal || 0);
+    }));
+    const topProductos = Object.entries(prodMap)
+        .sort((a,b) => b[1]-a[1]).slice(0, 8);
+
+    // --- Agrupar por categoría ---
+    const catMap = {};
+    ventasFiltradas.forEach(v => v.items.forEach(i => {
+        const prod = inventory.find(p => p.id === i.productId);
+        const cat  = prod?.categoria || 'Sin categoría';
+        catMap[cat] = (catMap[cat] || 0) + (i.subtotal || 0);
+    }));
+
+    // Actualizar título del gráfico tendencia según período
+    const tituloTendencia = document.querySelector('.stats-chart-card.stats-chart-wide:first-child .chart-title');
+    if (tituloTendencia) {
+        const titulosMap = { diaria: '📈 Ingresos hora a hora (hoy)', semanal: '📈 Ingresos por día de la semana', mensual: '📈 Ingresos por día del mes' };
+        tituloTendencia.textContent = titulosMap[periodo] || '📈 Tendencia de ingresos';
+    }
+
+    // --- Tendencia por período ---
+    const tendenciaLabels = [];
+    const tendenciaData   = [];
+
+    if (periodo === 'diaria') {
+        const porHora = Array(24).fill(0);
+        ventasFiltradas.forEach(v => {
+            // Usar globalId (timestamp) para obtener la hora exacta
+            let hora = -1;
+            if (v.globalId && v.globalId > 1000000000000) {
+                hora = new Date(v.globalId).getHours();
+            } else {
+                hora = new Date(v.date).getHours();
+            }
+            if (!isNaN(hora) && hora >= 0) porHora[hora] += (v.total || 0);
+        });
+        for (let h = 0; h < 24; h++) {
+            tendenciaLabels.push(h + ':00');
+            tendenciaData.push(porHora[h]);
+        }
+    } else if (periodo === 'semanal') {
+        const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        const porDia = Array(7).fill(0);
+        ventasFiltradas.forEach(v => {
+            const fv = parsearFechaVenta(v);
+            if (fv) porDia[fv.getDay()] += (v.total || 0);
+        });
+        dias.forEach((d,i) => { tendenciaLabels.push(d); tendenciaData.push(porDia[i]); });
+    } else {
+        const diasEnMes = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+        const porDia = Array(diasEnMes).fill(0);
+        ventasFiltradas.forEach(v => {
+            const fv = parsearFechaVenta(v);
+            if (fv) { const d = fv.getDate() - 1; if (d >= 0 && d < diasEnMes) porDia[d] += (v.total || 0); }
+        });
+        for (let d = 1; d <= diasEnMes; d++) {
+            tendenciaLabels.push('D' + d);
+            tendenciaData.push(porDia[d-1]);
+        }
+    }
+
+    // Badge de tendencia
+    const maxVal = Math.max(...tendenciaData, 1);
+    const horasPico = tendenciaData.filter(v => v > 0).length;
+    const badgeTend = document.getElementById('chart-badge-tendencia');
+    if (badgeTend) {
+        if (periodo === 'diaria') badgeTend.textContent = horasPico > 0 ? `${horasPico} hora${horasPico > 1 ? 's' : ''} con ventas` : 'Sin ventas hoy';
+        else badgeTend.textContent = fmt(totalVentas) + ' total';
+    }
+    const badgeIng  = document.getElementById('chart-badge-ingresos');
+    if (badgeIng) {
+        badgeIng.textContent = numTransacciones === 0 ? 'Sin transacciones' :
+            numTransacciones + ' venta' + (numTransacciones > 1 ? 's' : '');
+    }
+
+    const CHART_DEFAULTS = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#ffffff', font: { size: 14 } } } },
+        scales: {
+            x: { ticks: { color: '#ffffff', font: { size: 13 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { ticks: { color: '#ffffff', font: { size: 13 }, callback: v => v >= 1000 ? '$'+Math.round(v/1000)+'k' : '$'+v }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+    };
+
+    const COLORS_GRAD = [
+        'rgba(122,228,214,0.75)', 'rgba(100,180,255,0.75)', 'rgba(180,140,255,0.75)',
+        'rgba(255,160,80,0.75)',  'rgba(255,100,150,0.75)', 'rgba(80,220,160,0.75)',
+        'rgba(255,210,70,0.75)',  'rgba(120,160,255,0.75)'
+    ];
+
+    function destroyChart(ref) { try { if (ref) ref.destroy(); } catch(e){} }
+    function getCtx(id) { return document.getElementById(id)?.getContext('2d'); }
+
+    // Gráfico 1: Tendencia (área)
+    destroyChart(chartTendencia);
+    const ctx1 = getCtx('chartTendencia');
+    if (ctx1) chartTendencia = new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: tendenciaLabels,
+            datasets: [{
+                label: 'Ingresos',
+                data: tendenciaData,
+                borderColor: '#7ae4d6',
+                backgroundColor: (ctx) => {
+                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 210);
+                    gradient.addColorStop(0, 'rgba(122,228,214,0.18)');
+                    gradient.addColorStop(1, 'rgba(122,228,214,0.01)');
+                    return gradient;
+                },
+                pointBackgroundColor: '#7ae4d6',
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.35,
+                borderWidth: 2
+            }]
+        },
+        options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } } }
+    });
+
+    // Gráfico 2: Productos más vendidos (barras verticales)
+    destroyChart(chartProductos);
+    const ctx2 = getCtx('chartProductos');
+    if (ctx2) chartProductos = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: topProductos.map(p => p[0].length > 16 ? p[0].slice(0,16)+'…' : p[0]),
+            datasets: [{
+                label: 'Unidades vendidas',
+                data: topProductos.map(p => p[1]),
+                backgroundColor: COLORS_GRAD,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            ...CHART_DEFAULTS,
+            plugins: { legend: { display: false }, tooltip: {
+                callbacks: { label: ctx => ` ${ctx.raw} unidades` }
+            }},
+            scales: {
+                x: { ticks: { color: '#ffffff', font: { size: 14 } }, grid: { display: false } },
+                y: { ticks: { color: '#ffffff', font: { size: 13 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+
+    // Gráfico 3: Categorías (dona)
+    destroyChart(chartCategorias);
+    const ctx3 = getCtx('chartCategorias');
+    if (ctx3) chartCategorias = new Chart(ctx3, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(catMap),
+            datasets: [{
+                data: Object.values(catMap),
+                backgroundColor: COLORS_GRAD,
+                borderColor: 'rgba(8,15,26,0.8)',
+                borderWidth: 2,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: { position: 'right', labels: { color: '#ffffff', font: { size: 22, weight: 'bold' }, boxWidth: 22, padding: 24 } }
+            }
+        }
+    });
+
+    // Gráfico 4: Distribución barras
+    destroyChart(chartIngresos);
+    const ctx4 = getCtx('chartIngresos');
+    if (ctx4) chartIngresos = new Chart(ctx4, {
+        type: 'bar',
+        data: {
+            labels: tendenciaLabels,
+            datasets: [{
+                label: 'Ingresos $',
+                data: tendenciaData,
+                backgroundColor: tendenciaData.map(v => v === maxVal
+                    ? 'rgba(122,228,214,0.85)' : 'rgba(122,228,214,0.22)'),
+                borderColor: tendenciaData.map(v => v === maxVal
+                    ? '#7ae4d6' : 'rgba(122,228,214,0.15)'),
+                borderWidth: 1.5,
+                borderRadius: 4
+            }]
+        },
+        options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } } }
+    });
+
+    // --- Tabla de productos ---
+    const tbody = document.getElementById('stats-tabla-body');
+    if (tbody) {
+        const todosProductos = Object.entries(prodMap)
+            .sort((a,b) => b[1]-a[1]).slice(0,15);
+        if (todosProductos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="stats-tabla-empty">📭 Aún no hay ventas registradas en este período.<br><small style="opacity:0.6">Registra una venta y los datos aparecerán aquí.</small></td></tr>';
+        } else {
+            const maxIngreso = Math.max(...todosProductos.map(p => prodIngresos[p[0]] || 0), 1);
+            tbody.innerHTML = todosProductos.map(([nombre, qty], idx) => {
+                const ingreso = prodIngresos[nombre] || 0;
+                const pct = totalVentas > 0 ? Math.round((ingreso / totalVentas) * 100) : 0;
+                return `<tr>
+                    <td>${idx+1}</td>
+                    <td style="text-align:left">${nombre}</td>
+                    <td>${qty}</td>
+                    <td>${fmt(ingreso)}</td>
+                    <td>
+                        <div class="stats-pct-bar">
+                            <span class="stats-pct-num">${pct}%</span>
+                            <div class="stats-pct-track">
+                                <div class="stats-pct-fill" style="width:${pct}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+    }
+}
+
+// ============================================================
+// MÓDULO: ESTADÍSTICAS VENTAS ONLINE
+// Solo procesa ventas cuyo número de ticket empieza con "ONLINE-"
+// (generadas por el trigger fn_descontar_inventario_pedido en Supabase)
+// ============================================================
+let chartOnlineTendencia  = null;
+let chartOnlineProductos  = null;
+let chartOnlineCategorias = null;
+let chartOnlineIngresos   = null;
+let periodoOnlineActivo   = 'diaria';
+
+function initEstadisticasOnline() {
+    document.querySelectorAll('.btn-period-online').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.btn-period-online').forEach(b => b.classList.remove('activo'));
+            btn.classList.add('activo');
+            periodoOnlineActivo = btn.dataset.period;
+            renderEstadisticasOnline(periodoOnlineActivo);
+        };
+    });
+    renderEstadisticasOnline(periodoOnlineActivo);
+}
+
+function getVentasOnline() {
+    // Solo ventas con prefijo ONLINE- (pedidos confirmados de la tienda)
+    return sales.filter(v => v.id && String(v.id).startsWith('ONLINE-'));
+}
+
+function filtrarOnlinePorPeriodo(periodo, ventasOnline) {
+    const ahora  = new Date();
+    const hoyStr = ahora.toDateString(); // formato invariante del navegador
+    return ventasOnline.filter(venta => {
+        const fv = parsearFechaVenta(venta);
+        if (!fv) return false;
+        if (periodo === 'diaria') {
+            return fv.toDateString() === hoyStr;
+        }
+        if (periodo === 'semanal') {
+            const ini = new Date(ahora);
+            ini.setDate(ahora.getDate() - ahora.getDay());
+            ini.setHours(0,0,0,0);
+            return fv >= ini;
+        }
+        if (periodo === 'mensual') {
+            return fv.getMonth() === ahora.getMonth() && fv.getFullYear() === ahora.getFullYear();
+        }
+        return false;
+    });
+}
+
+function filtrarOnlinePorPeriodoAnterior(periodo, ventasOnline) {
+    const ahora   = new Date();
+    const ayer    = new Date(ahora);
+    ayer.setDate(ahora.getDate() - 1);
+    const ayerStr = ayer.toDateString();
+    return ventasOnline.filter(venta => {
+        const fv = parsearFechaVenta(venta);
+        if (!fv) return false;
+        if (periodo === 'diaria') {
+            return fv.toDateString() === ayerStr;
+        }
+        if (periodo === 'semanal') {
+            const ini = new Date(ahora);
+            ini.setDate(ahora.getDate() - ahora.getDay() - 7);
+            ini.setHours(0,0,0,0);
+            const fin = new Date(ini);
+            fin.setDate(ini.getDate() + 7);
+            return fv >= ini && fv < fin;
+        }
+        if (periodo === 'mensual') {
+            const mes  = ahora.getMonth() === 0 ? 11 : ahora.getMonth() - 1;
+            const anio = ahora.getMonth() === 0 ? ahora.getFullYear() - 1 : ahora.getFullYear();
+            return fv.getMonth() === mes && fv.getFullYear() === anio;
+        }
+        return false;
+    });
+}
+
+function renderEstadisticasOnline(periodo) {
+    const todasOnline    = getVentasOnline();
+    const ventasFiltradas = filtrarOnlinePorPeriodo(periodo, todasOnline);
+    const ventasAnteriores = filtrarOnlinePorPeriodoAnterior(periodo, todasOnline);
+
+    const fmt = v => '$' + Math.round(v).toLocaleString('es-CO');
+
+    // --- KPIs ---
+    const totalVentas      = ventasFiltradas.reduce((s,v) => s + (v.total || 0), 0);
+    const numTransacciones = ventasFiltradas.length;
+    const totalProductos   = ventasFiltradas.reduce((s,v) => s + v.items.reduce((a,i) => a + (i.qty||0), 0), 0);
+    const ticketPromedio   = numTransacciones > 0 ? totalVentas / numTransacciones : 0;
+    const totalAnt  = ventasAnteriores.reduce((s,v) => s + (v.total || 0), 0);
+    const transAnt  = ventasAnteriores.length;
+    const prodAnt   = ventasAnteriores.reduce((s,v) => s + v.items.reduce((a,i) => a + (i.qty||0), 0), 0);
+    const ticketAnt = transAnt > 0 ? totalAnt / transAnt : 0;
+
+    const el = id => document.getElementById(id);
+    if (el('kpio-total-ventas'))      el('kpio-total-ventas').textContent      = fmt(totalVentas);
+    if (el('kpio-num-transacciones')) el('kpio-num-transacciones').textContent = numTransacciones;
+    if (el('kpio-productos-vendidos'))el('kpio-productos-vendidos').textContent = totalProductos;
+    if (el('kpio-ticket-promedio'))   el('kpio-ticket-promedio').textContent   = fmt(ticketPromedio);
+
+    // Etiqueta período
+    const labelMap = { diaria: 'Resumen de hoy', semanal: 'Esta semana', mensual: 'Este mes' };
+    if (el('stats-online-fecha-label')) el('stats-online-fecha-label').textContent = labelMap[periodo] || '';
+
+    // Trends
+    function setTrendOnline(elId, compareId, actual, anterior) {
+        const e = el(elId), ec = el(compareId);
+        if (!e) return;
+        if (anterior === 0 && actual === 0) {
+            e.textContent = '—'; e.className = 'kpi-trend';
+            if (ec) ec.textContent = 'Sin datos del período anterior';
+            return;
+        }
+        if (anterior === 0) {
+            e.textContent = '🆕 Nuevo'; e.className = 'kpi-trend positivo';
+            if (ec) ec.textContent = 'Primera vez en este período';
+            return;
+        }
+        const pct = Math.round(((actual - anterior) / anterior) * 100);
+        e.textContent = (pct >= 0 ? '▲ ' : '▼ ') + Math.abs(pct) + '%';
+        e.className = 'kpi-trend ' + (pct >= 0 ? 'positivo' : 'negativo');
+        if (ec) ec.textContent = 'Período anterior: ' + (anterior > 100 ? fmt(anterior) : anterior);
+    }
+    setTrendOnline('kpio-trend-ventas', 'kpio-compare-ventas', totalVentas,     totalAnt);
+    setTrendOnline('kpio-trend-trans',  'kpio-compare-trans',  numTransacciones, transAnt);
+    setTrendOnline('kpio-trend-prod',   'kpio-compare-prod',   totalProductos,   prodAnt);
+    setTrendOnline('kpio-trend-ticket', 'kpio-compare-ticket', ticketPromedio,   ticketAnt);
+
+    // --- Agrupar productos ---
+    const prodMap = {}, prodIngresos = {};
+    ventasFiltradas.forEach(v => v.items.forEach(i => {
+        prodMap[i.name]      = (prodMap[i.name] || 0) + (i.qty || 0);
+        prodIngresos[i.name] = (prodIngresos[i.name] || 0) + (i.subtotal || 0);
+    }));
+    const topProductos = Object.entries(prodMap).sort((a,b) => b[1]-a[1]).slice(0, 8);
+
+    // --- Agrupar por categoría ---
+    const catMap = {};
+    ventasFiltradas.forEach(v => v.items.forEach(i => {
+        const prod = inventory.find(p => p.id === i.productId);
+        const cat  = prod?.categoria || 'Sin categoría';
+        catMap[cat] = (catMap[cat] || 0) + (i.subtotal || 0);
+    }));
+
+    // --- Tendencia ---
+    const tendenciaLabels = [], tendenciaData = [];
+    if (periodo === 'diaria') {
+        const porHora = Array(24).fill(0);
+        ventasFiltradas.forEach(v => {
+            const fv = parsearFechaVenta(v);
+            const h = fv ? fv.getHours() : NaN;
+            if (!isNaN(h) && h >= 0) porHora[h] += (v.total || 0);
+        });
+        for (let h = 0; h < 24; h++) { tendenciaLabels.push(h+':00'); tendenciaData.push(porHora[h]); }
+    } else if (periodo === 'semanal') {
+        const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        const porDia = Array(7).fill(0);
+        ventasFiltradas.forEach(v => { const fv = parsearFechaVenta(v); if (fv) porDia[fv.getDay()] += (v.total||0); });
+        dias.forEach((d,i) => { tendenciaLabels.push(d); tendenciaData.push(porDia[i]); });
+    } else {
+        const diasEnMes = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+        const porDia = Array(diasEnMes).fill(0);
+        ventasFiltradas.forEach(v => { const fv = parsearFechaVenta(v); if (fv) { const d = fv.getDate()-1; if (d>=0&&d<diasEnMes) porDia[d]+=(v.total||0); } });
+        for (let d = 1; d <= diasEnMes; d++) { tendenciaLabels.push('D'+d); tendenciaData.push(porDia[d-1]); }
+    }
+
+    // Título gráfico dinámico
+    const titulosMap = { diaria: '📈 Ingresos online hora a hora (hoy)', semanal: '📈 Ingresos online por día de la semana', mensual: '📈 Ingresos online por día del mes' };
+    if (el('online-chart-title-tendencia')) el('online-chart-title-tendencia').textContent = titulosMap[periodo];
+
+    const maxVal = Math.max(...tendenciaData, 1);
+    const horasPico = tendenciaData.filter(v => v > 0).length;
+    if (el('online-chart-badge-tendencia')) {
+        el('online-chart-badge-tendencia').textContent = periodo === 'diaria'
+            ? (horasPico > 0 ? `${horasPico} hora${horasPico>1?'s':''} con pedidos` : 'Sin pedidos hoy')
+            : fmt(totalVentas) + ' total';
+    }
+    if (el('online-chart-badge-ingresos')) {
+        el('online-chart-badge-ingresos').textContent = numTransacciones === 0
+            ? 'Sin pedidos' : numTransacciones + ' pedido' + (numTransacciones > 1 ? 's' : '');
+    }
+
+    const CHART_DEFAULTS = {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#ffffff', font: { size: 14 } } } },
+        scales: {
+            x: { ticks: { color: '#ffffff', font: { size: 13 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { ticks: { color: '#ffffff', font: { size: 13 }, callback: v => v>=1000?'$'+Math.round(v/1000)+'k':'$'+v }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+    };
+    const COLORS_GRAD = [
+        'rgba(100,180,255,0.75)', 'rgba(122,228,214,0.75)', 'rgba(180,140,255,0.75)',
+        'rgba(255,160,80,0.75)',  'rgba(255,100,150,0.75)', 'rgba(80,220,160,0.75)',
+        'rgba(255,210,70,0.75)',  'rgba(120,160,255,0.75)'
+    ];
+    function destroyC(ref) { try { if (ref) ref.destroy(); } catch(e){} }
+    function getCtxO(id) { return document.getElementById(id)?.getContext('2d'); }
+
+    // Gráfico 1: Tendencia
+    destroyC(chartOnlineTendencia);
+    const cx1 = getCtxO('chartOnlineTendencia');
+    if (cx1) chartOnlineTendencia = new Chart(cx1, {
+        type: 'line',
+        data: { labels: tendenciaLabels, datasets: [{ label: 'Ingresos online', data: tendenciaData,
+            borderColor: '#64b4ff',
+            backgroundColor: ctx => { const g = ctx.chart.ctx.createLinearGradient(0,0,0,210); g.addColorStop(0,'rgba(100,180,255,0.18)'); g.addColorStop(1,'rgba(100,180,255,0.01)'); return g; },
+            pointBackgroundColor: '#64b4ff', pointRadius: 3, pointHoverRadius: 6, fill: true, tension: 0.35, borderWidth: 2 }]
+        },
+        options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } } }
+    });
+
+    // Gráfico 2: Top productos (barras verticales)
+    destroyC(chartOnlineProductos);
+    const cx2 = getCtxO('chartOnlineProductos');
+    if (cx2) chartOnlineProductos = new Chart(cx2, {
+        type: 'bar',
+        data: { labels: topProductos.map(p => p[0].length>16?p[0].slice(0,16)+'…':p[0]),
+            datasets: [{ label: 'Unidades pedidas', data: topProductos.map(p=>p[1]), backgroundColor: COLORS_GRAD, borderRadius: 6 }]
+        },
+        options: { ...CHART_DEFAULTS,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} unidades` } } },
+            scales: { x: { ticks: { color: '#ffffff', font: { size: 14 } }, grid: { display: false } },
+                y: { ticks: { color: '#ffffff', font: { size: 13 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } } }
+        }
+    });
+
+    // Gráfico 3: Dona categorías
+    destroyC(chartOnlineCategorias);
+    const cx3 = getCtxO('chartOnlineCategorias');
+    if (cx3) chartOnlineCategorias = new Chart(cx3, {
+        type: 'doughnut',
+        data: { labels: Object.keys(catMap), datasets: [{ data: Object.values(catMap), backgroundColor: COLORS_GRAD, borderColor: 'rgba(8,15,26,0.8)', borderWidth: 2, hoverOffset: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+            plugins: { legend: { position: 'right', labels: { color: '#ffffff', font: { size: 22, weight: 'bold' }, boxWidth: 22, padding: 24 } } }
+        }
+    });
+
+    // Gráfico 4: Barras distribución
+    destroyC(chartOnlineIngresos);
+    const cx4 = getCtxO('chartOnlineIngresos');
+    if (cx4) chartOnlineIngresos = new Chart(cx4, {
+        type: 'bar',
+        data: { labels: tendenciaLabels, datasets: [{ label: 'Ingresos $', data: tendenciaData,
+            backgroundColor: tendenciaData.map(v => v===maxVal ? 'rgba(100,180,255,0.85)' : 'rgba(100,180,255,0.22)'),
+            borderColor:     tendenciaData.map(v => v===maxVal ? '#64b4ff' : 'rgba(100,180,255,0.15)'),
+            borderWidth: 1.5, borderRadius: 4 }]
+        },
+        options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } } }
+    });
+
+    // --- Tabla ---
+    const tbody = document.getElementById('stats-online-tabla-body');
+    if (tbody) {
+        const todos = Object.entries(prodMap).sort((a,b) => b[1]-a[1]).slice(0,15);
+        if (todos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="stats-tabla-empty">📭 Aún no hay pedidos online confirmados en este período.<br><small style="opacity:0.6">Cuando un pedido pase a "pago confirmado" aparecerá aquí.</small></td></tr>';
+        } else {
+            tbody.innerHTML = todos.map(([nombre, qty], idx) => {
+                const ingreso = prodIngresos[nombre] || 0;
+                const pct = totalVentas > 0 ? Math.round((ingreso / totalVentas) * 100) : 0;
+                return `<tr>
+                    <td>${idx+1}</td>
+                    <td style="text-align:left">${nombre}</td>
+                    <td>${qty}</td>
+                    <td>${fmt(ingreso)}</td>
+                    <td>
+                        <div class="stats-pct-bar">
+                            <span class="stats-pct-num">${pct}%</span>
+                            <div class="stats-pct-track"><div class="stats-pct-fill" style="width:${pct}%"></div></div>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+    }
+}
+let combos = [];
+let productosEnComboActual = []; // [{id, nombre, precio, imagen}]
+
+async function loadCombos() {
+    if (!currentUserId) return;
+    const { data, error } = await supabaseClient
+        .from('combos')
+        .select('*, combo_productos(*)')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false });
+    if (!error && data) combos = data;
+}
+
+async function saveCombo(combo) {
+    const { data: comboInsertado, error: err1 } = await supabaseClient
+        .from('combos')
+        .insert([{ nombre: combo.nombre, descripcion: combo.descripcion, precio: combo.precio, precio_suma: combo.precioSuma, user_id: currentUserId }])
+        .select().single();
+    if (err1) throw err1;
+
+    const items = combo.productos.map(p => ({
+        combo_id: comboInsertado.id,
+        product_id: p.id,
+        nombre: p.nombre,
+        precio: p.precio,
+        imagen: p.imagen,
+        user_id: currentUserId
+    }));
+    const { error: err2 } = await supabaseClient.from('combo_productos').insert(items);
+    if (err2) throw err2;
+    return comboInsertado;
+}
+
+async function deleteCombo(comboId) {
+    await supabaseClient.from('combos').delete().eq('id', comboId);
+}
+
+function renderCombos() {
+    const contenedor = document.getElementById('contenedorCombos');
+    if (!contenedor) return;
+
+    // Botones de navegación
+    const btnVolver = document.getElementById('btnVolverDesdeCombos');
+    if (btnVolver && !btnVolver._ev) {
+        btnVolver._ev = true;
+        btnVolver.onclick = () => showScreen('pantalla-inicio');
+    }
+    const btnGuardar = document.getElementById('btnGuardarCombo');
+    if (btnGuardar && !btnGuardar._ev) {
+        btnGuardar._ev = true;
+        btnGuardar.onclick = handleGuardarCombo;
+    }
+    const btnLimpiar = document.getElementById('btnLimpiarCombo');
+    if (btnLimpiar && !btnLimpiar._ev) {
+        btnLimpiar._ev = true;
+        btnLimpiar.onclick = limpiarFormCombo;
+    }
+
+    // Autocomplete de búsqueda de productos
+    const inputBuscar = document.getElementById('inputBuscarProductoCombo');
+    const autoList    = document.getElementById('combo-autocomplete-list');
+    if (inputBuscar && !inputBuscar._ev) {
+        inputBuscar._ev = true;
+        inputBuscar.addEventListener('input', () => {
+            const q = inputBuscar.value.trim().toLowerCase();
+            autoList.innerHTML = '';
+            if (!q) { autoList.classList.remove('visible'); return; }
+            const resultados = inventory.filter(p =>
+                (p.nombre || '').toLowerCase().includes(q) ||
+                (p.codigoBarras || '').includes(q)
+            ).slice(0, 8);
+            if (!resultados.length) { autoList.classList.remove('visible'); return; }
+            resultados.forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'combo-auto-item';
+                item.innerHTML = `
+                    <img class="combo-auto-thumb" src="${p.imagen || 'https://via.placeholder.com/34'}" alt="">
+                    <div class="combo-auto-info">
+                        <span class="combo-auto-nombre">${p.nombre}</span>
+                        <span class="combo-auto-precio">$${(p.precio||0).toLocaleString('es-CO')}</span>
+                    </div>`;
+                item.onclick = () => {
+                    agregarProductoAlCombo({ id: p.id, nombre: p.nombre, precio: p.precio || 0, imagen: p.imagen || '' });
+                    inputBuscar.value = '';
+                    autoList.classList.remove('visible');
+                };
+                autoList.appendChild(item);
+            });
+            autoList.classList.add('visible');
+        });
+        document.addEventListener('click', e => {
+            if (!autoList.contains(e.target) && e.target !== inputBuscar)
+                autoList.classList.remove('visible');
+        });
+    }
+
+    loadCombos().then(() => renderTarjetasCombos());
+}
+
+function agregarProductoAlCombo(prod) {
+    if (productosEnComboActual.find(p => p.id === prod.id)) return;
+    productosEnComboActual.push(prod);
+    actualizarChipsCombo();
+    actualizarValorSuma();
+}
+
+function actualizarChipsCombo() {
+    const contenedor = document.getElementById('combo-productos-seleccionados');
+    if (!contenedor) return;
+    if (!productosEnComboActual.length) {
+        contenedor.innerHTML = '<p class="combo-empty-msg">No hay productos agregados al combo.</p>';
+        return;
+    }
+    contenedor.innerHTML = productosEnComboActual.map(p => `
+        <div class="combo-chip">
+            <img src="${p.imagen || 'https://via.placeholder.com/26'}" alt="">
+            <span>${p.nombre}</span>
+            <button class="combo-chip-remove" data-id="${p.id}" title="Quitar">✕</button>
+        </div>`).join('');
+    contenedor.querySelectorAll('.combo-chip-remove').forEach(btn => {
+        btn.onclick = () => {
+            productosEnComboActual = productosEnComboActual.filter(p => p.id !== btn.dataset.id);
+            actualizarChipsCombo();
+            actualizarValorSuma();
+        };
+    });
+}
+
+function actualizarValorSuma() {
+    const suma = productosEnComboActual.reduce((s,p) => s + (p.precio||0), 0);
+    const el = document.getElementById('combo-valor-suma');
+    if (el) el.textContent = '$' + suma.toLocaleString('es-CO');
+}
+
+function limpiarFormCombo() {
+    productosEnComboActual = [];
+    ['inputComboNombre','inputComboDescripcion','inputComboPrecio'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    actualizarChipsCombo();
+    actualizarValorSuma();
+}
+
+async function handleGuardarCombo() {
+    const nombre = (document.getElementById('inputComboNombre')?.value || '').trim();
+    const descripcion = (document.getElementById('inputComboDescripcion')?.value || '').trim();
+    const precioInput = parseFloat(document.getElementById('inputComboPrecio')?.value || 0);
+
+    if (!nombre) { mostrarAlerta('⚠️ El combo debe tener un nombre.', 'warn'); return; }
+    if (!productosEnComboActual.length) { mostrarAlerta('⚠️ Agrega al menos un producto al combo.', 'warn'); return; }
+
+    const precioSuma = productosEnComboActual.reduce((s,p) => s + (p.precio||0), 0);
+    const precio = precioInput > 0 ? precioInput : precioSuma;
+
+    // MODO OFFLINE: guardar combo localmente en IndexedDB
+    if (modoOffline) {
+        try {
+            await idbPut('productos_pending', {
+                tipo: 'nuevo_combo',
+                datos: { nombre, descripcion, precio, precioSuma, productos: productosEnComboActual },
+                timestamp: Date.now()
+            });
+            // Simularlo visualmente en memoria
+            const comboLocal = {
+                id: 'OFFLINE_COMBO_' + Date.now(),
+                nombre, descripcion, precio, precio_suma: precioSuma,
+                combo_productos: productosEnComboActual.map(p => ({
+                    nombre: p.nombre, precio: p.precio, imagen: p.imagen
+                }))
+            };
+            combos.unshift(comboLocal);
+            limpiarFormCombo();
+            renderTarjetasCombos();
+            await actualizarUIOffline();
+            mostrarAlerta('✅ Combo guardado localmente.\nSe subirá a Supabase al sincronizar.', 'success');
+        } catch(e) {
+            console.error(e);
+            mostrarAlerta('❌ Error guardando combo localmente.', 'error');
+        }
+        return;
+    }
+
+    // MODO ONLINE: guardar en Supabase
+    try {
+        await saveCombo({ nombre, descripcion, precio, precioSuma, productos: productosEnComboActual });
+        mostrarAlerta('✅ Combo guardado correctamente.', 'success');
+        limpiarFormCombo();
+        await loadCombos();
+        renderTarjetasCombos();
+    } catch(e) {
+        console.error(e);
+        mostrarAlerta('❌ Error guardando combo. Verifica que las tablas existan en Supabase.', 'error');
+    }
+}
+
+function renderTarjetasCombos() {
+    const contenedor = document.getElementById('contenedorCombos');
+    if (!contenedor) return;
+    if (!combos.length) {
+        contenedor.innerHTML = '<p class="combo-empty-msg" style="color:rgba(200,180,255,0.4);padding:20px">No hay combos creados todavía.</p>';
+        return;
+    }
+    contenedor.innerHTML = combos.map(combo => {
+        const prods = combo.combo_productos || [];
+        const miniImgs = prods.slice(0,5).map(p => `
+            <div class="combo-mini-producto">
+                <img class="combo-mini-img" src="${p.imagen || 'https://via.placeholder.com/48'}" alt="${p.nombre}">
+                <span class="combo-mini-nombre">${(p.nombre||'').slice(0,14)}</span>
+            </div>`).join('');
+        const masProds = prods.length > 5 ? `<span style="color:rgba(200,180,255,0.5);font-size:0.75em;align-self:center">+${prods.length-5} más</span>` : '';
+        const precioOrig = combo.precio_suma && combo.precio_suma !== combo.precio
+            ? `<div class="combo-card-precio-orig">Valor individual: $${Math.round(combo.precio_suma).toLocaleString('es-CO')}</div>` : '';
+        return `
+        <div class="tarjeta-combo">
+            <div class="combo-card-nombre">${combo.nombre}</div>
+            ${combo.descripcion ? `<div class="combo-card-desc">${combo.descripcion}</div>` : ''}
+            <div class="combo-card-productos">${miniImgs}${masProds}</div>
+            <div class="combo-card-precio">$${Math.round(combo.precio).toLocaleString('es-CO')}</div>
+            ${precioOrig}
+            <div class="combo-card-acciones">
+                <button class="btn-borrar-combo" data-comboid="${combo.id}">🗑️ Eliminar</button>
+            </div>
+        </div>`;
+    }).join('');
+
+    contenedor.querySelectorAll('.btn-borrar-combo').forEach(btn => {
+        btn.onclick = async () => {
+            const ok = await mostrarConfirm('¿Eliminar este combo?', 'danger');
+            if (!ok) return;
+            await deleteCombo(btn.dataset.comboid);
+            combos = combos.filter(c => String(c.id) !== String(btn.dataset.comboid));
+            renderTarjetasCombos();
+        };
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // Filtros de categoría en ventas físicas
@@ -2431,37 +3531,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === Dropdown de categorias ===
-    const dropdownWrap = document.getElementById('categoriasFiltroBar');
-    const dropdownBtn  = document.getElementById('categoriasDropdownBtn');
-    const dropdownMenu = document.getElementById('categoriasDropdownMenu');
-
-    if (dropdownBtn) {
-        dropdownBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdownWrap.classList.toggle('abierto');
-        });
-    }
-    document.addEventListener('click', () => {
-        if (dropdownWrap) dropdownWrap.classList.remove('abierto');
-    });
-    if (dropdownMenu) {
-        dropdownMenu.addEventListener('click', (e) => e.stopPropagation());
-    }
-
-    // Filtros de categoria en inventario
+    // Filtros de categoría en inventario
     document.querySelectorAll('.btn-categoria-filtro').forEach(btn => {
         btn.addEventListener('click', () => {
             const esTodas = btn.dataset.categoria === 'todas';
             const yaActivo = btn.classList.contains('activo');
 
             if (esTodas && yaActivo) {
+                // "Todas" ya estaba activo → ocultar productos
                 contenedorProductos.classList.toggle('oculto-productos');
                 btn.classList.toggle('atenuado');
-                if (dropdownWrap) dropdownWrap.classList.remove('abierto');
                 return;
             }
 
+            // Cualquier otro botón: mostrar productos, quitar ocultado previo
             contenedorProductos.classList.remove('oculto-productos');
             document.querySelector('.btn-categoria-filtro[data-categoria="todas"]')
                 ?.classList.remove('atenuado');
@@ -2469,7 +3552,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.btn-categoria-filtro').forEach(b => b.classList.remove('activo'));
             btn.classList.add('activo');
             categoriaActivaFiltro = btn.dataset.categoria;
-            if (dropdownWrap) dropdownWrap.classList.remove('abierto');
+            // Respetar búsqueda activa si existe
             renderProducts(searchResults);
         });
     });
@@ -2554,3 +3637,474 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+// ============================================================
+// MÓDULO: MODO DE TRABAJO
+// ============================================================
+// SWITCH ON  = trabajando CON Supabase (modo normal, en línea)
+// SWITCH OFF = sin internet, todo se guarda en IndexedDB local
+//
+// Detección automática de internet:
+//   - Caída    → switch se pone OFF automáticamente, sigue operando
+//   - Regreso  → alerta, pide sincronizar ANTES de volver a ON
+// ============================================================
+
+const DB_NAME    = 'softvent_offline';
+const DB_VERSION = 1;
+let offlineDB    = null;
+let modoOffline  = false;        // false = en línea (Supabase)
+let _reconexionPendiente = false; // evita diálogo doble al reconectar
+
+// ──────────────────────────────────────────────────────────
+// IndexedDB: abrir / helpers
+// ──────────────────────────────────────────────────────────
+function abrirOfflineDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('productos_pending'))
+                db.createObjectStore('productos_pending', { keyPath: 'localId', autoIncrement: true });
+            if (!db.objectStoreNames.contains('ventas_pending'))
+                db.createObjectStore('ventas_pending',   { keyPath: 'localId', autoIncrement: true });
+            if (!db.objectStoreNames.contains('inventario_cache'))
+                db.createObjectStore('inventario_cache', { keyPath: 'id' });
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror   = (e) => reject(e.target.error);
+    });
+}
+
+function idbPut(store, data) {
+    return new Promise((resolve, reject) => {
+        const tx  = offlineDB.transaction(store, 'readwrite');
+        const req = tx.objectStore(store).put(data);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror   = () => reject(req.error);
+    });
+}
+
+function idbGetAll(store) {
+    return new Promise((resolve, reject) => {
+        const tx  = offlineDB.transaction(store, 'readonly');
+        const req = tx.objectStore(store).getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror   = () => reject(req.error);
+    });
+}
+
+function idbDelete(store, key) {
+    return new Promise((resolve, reject) => {
+        const tx  = offlineDB.transaction(store, 'readwrite');
+        const req = tx.objectStore(store).delete(key);
+        req.onsuccess = () => resolve();
+        req.onerror   = () => reject(req.error);
+    });
+}
+
+function idbClear(store) {
+    return new Promise((resolve, reject) => {
+        const tx  = offlineDB.transaction(store, 'readwrite');
+        const req = tx.objectStore(store).clear();
+        req.onsuccess = () => resolve();
+        req.onerror   = () => reject(req.error);
+    });
+}
+
+// ──────────────────────────────────────────────────────────
+// Cache de inventario local
+// ──────────────────────────────────────────────────────────
+async function guardarInventarioCache() {
+    if (!offlineDB) return;
+    await idbClear('inventario_cache');
+    for (const p of inventory) await idbPut('inventario_cache', p);
+}
+
+async function cargarInventarioDesdeCache() {
+    if (!offlineDB) return;
+    const cached = await idbGetAll('inventario_cache');
+    if (cached.length > 0) {
+        inventory = cached;
+        renderProducts();
+        updateProductCount();
+        updateSalesDropdown();
+    }
+}
+
+async function contarPendientes() {
+    if (!offlineDB) return 0;
+    const prods  = await idbGetAll('productos_pending');
+    const ventas = await idbGetAll('ventas_pending');
+    return prods.length + ventas.length;
+}
+
+// ──────────────────────────────────────────────────────────
+// Actualizar UI del switch y panel
+// ──────────────────────────────────────────────────────────
+async function actualizarUIOffline() {
+    const toggle    = document.getElementById('offlineToggle');
+    const dot       = document.getElementById('offlineStatusDot');
+    const text      = document.getElementById('offlineStatusText');
+    const syncBtn   = document.getElementById('offlineSyncBtn');
+    const pending   = document.getElementById('offlinePendingCount');
+    const indicator = document.getElementById('offline-indicator');
+    const indText   = document.getElementById('offline-indicator-text');
+
+    const n = await contarPendientes();
+
+    if (modoOffline) {
+        // Switch visualmente en OFF (sin internet)
+        if (toggle) toggle.checked = false;
+        if (dot)    dot.classList.add('activo');
+        if (text)   text.textContent = '⚠️ Sin internet — guardando localmente';
+        if (syncBtn) syncBtn.classList.add('visible');
+        if (indicator) indicator.classList.add('visible');
+        if (indText) indText.textContent = 'Sin internet — modo local activo';
+        if (pending) pending.textContent = n > 0
+            ? `${n} operación(es) pendiente(s) de sincronizar`
+            : 'Sin operaciones pendientes';
+    } else {
+        // Switch en ON (Supabase)
+        if (toggle) toggle.checked = true;
+        if (dot)    dot.classList.remove('activo');
+        if (text)   text.textContent = '🟢 En línea — usando Supabase';
+        if (syncBtn) syncBtn.classList.remove('visible');
+        if (indicator) indicator.classList.remove('visible');
+        if (pending) pending.textContent = '';
+    }
+}
+
+// ──────────────────────────────────────────────────────────
+// Guardar producto / venta en local (modo offline)
+// ──────────────────────────────────────────────────────────
+async function guardarProductoOffline(datosProducto) {
+    await idbPut('productos_pending', {
+        tipo: 'nuevo_producto',
+        datos: datosProducto,
+        timestamp: Date.now()
+    });
+    const fakeId = 'OFFLINE_' + Date.now();
+    const productoLocal = { ...datosProducto, id: fakeId };
+    inventory.unshift(productoLocal);
+    await guardarInventarioCache();
+    renderProducts();
+    updateProductCount();
+    updateSalesDropdown();
+    await actualizarUIOffline();
+    return productoLocal;
+}
+
+async function guardarVentaOffline(saleData) {
+    await idbPut('ventas_pending', {
+        tipo: 'nueva_venta',
+        datos: saleData,
+        timestamp: Date.now()
+    });
+    // Descontar stock visualmente
+    for (const item of saleData.items) {
+        const prod = inventory.find(p => p.id && p.id.toString() === item.productId?.toString());
+        if (prod) prod.cantidad -= item.qty;
+    }
+    await guardarInventarioCache();
+    await actualizarUIOffline();
+}
+
+// ──────────────────────────────────────────────────────────
+// Sincronizar datos pendientes → Supabase
+// ──────────────────────────────────────────────────────────
+async function sincronizarConSupabase() {
+    const syncBtn = document.getElementById('offlineSyncBtn');
+    if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = '⏳ Sincronizando...'; }
+
+    let errores = 0;
+
+    try {
+        // 1. Productos nuevos
+        const productosPendientes = await idbGetAll('productos_pending');
+        for (const item of productosPendientes) {
+            if (item.tipo !== 'nuevo_producto') continue;
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (!user) throw new Error('Sin sesión activa');
+                const d = item.datos;
+                const { error } = await supabaseClient.from('productos').insert([{
+                    codigoBarras: d.codigoBarras || null,
+                    nombre:       d.nombre,
+                    precio:       d.precio,
+                    cantidad:     d.cantidad,
+                    imagen:       d.imagen || '',
+                    user_id:      user.id,
+                    categoria:    d.categoria || 'Otras'
+                }]);
+                if (error) throw error;
+                await idbDelete('productos_pending', item.localId);
+            } catch(e) {
+                console.error('Error sincronizando producto:', e);
+                errores++;
+            }
+        }
+
+        // 1b. Combos offline
+        const combosPendientes = productosPendientes.filter(item => item.tipo === 'nuevo_combo');
+        for (const item of combosPendientes) {
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (!user) throw new Error('Sin sesión activa');
+                await saveCombo({ ...item.datos });
+                await idbDelete('productos_pending', item.localId);
+            } catch(e) {
+                console.error('Error sincronizando combo:', e);
+                errores++;
+            }
+        }
+
+        // 2. Ventas
+        const ventasPendientes = await idbGetAll('ventas_pending');
+        for (const item of ventasPendientes) {
+            if (item.tipo !== 'nueva_venta') continue;
+            try {
+                await saveSale(item.datos);
+                await idbDelete('ventas_pending', item.localId);
+            } catch(e) {
+                console.error('Error sincronizando venta:', e);
+                errores++;
+            }
+        }
+
+        // 3. Recargar todo desde Supabase
+        await loadInventory();
+        await loadSales();
+        await guardarInventarioCache();
+        await actualizarUIOffline();
+
+        if (errores === 0) {
+            await mostrarAlerta('✅ Sincronización completada.\nTodos los datos están en Supabase.', 'success');
+        } else {
+            await mostrarAlerta(`⚠️ Sincronización parcial.\n${errores} elemento(s) no se pudieron subir.`, 'warn');
+        }
+    } catch(e) {
+        console.error('Error general en sincronización:', e);
+        await mostrarAlerta('❌ Error durante la sincronización:\n' + e.message, 'error');
+    } finally {
+        if (syncBtn) { syncBtn.disabled = false; syncBtn.textContent = '☁️ Sincronizar con Supabase'; }
+    }
+}
+
+// ──────────────────────────────────────────────────────────
+// Activación manual del switch
+// toggle: true  = usuario pone switch ON  → quiere volver a Supabase
+//         false = usuario pone switch OFF → quiere trabajar offline
+// ──────────────────────────────────────────────────────────
+async function manejarCambioSwitch(queremosSupabase) {
+    if (queremosSupabase) {
+        // El usuario quiere activar Supabase (switch → ON)
+        const n = await contarPendientes();
+        if (n > 0) {
+            // Hay datos sin subir: primero preguntar
+            const ok = await mostrarConfirm(
+                `Hay ${n} operación(es) guardada(s) localmente.\n¿Sincronizar con Supabase antes de volver al modo en línea?`,
+                'warn'
+            );
+            if (ok) {
+                await sincronizarConSupabase();
+            } else {
+                // El usuario rechazó sincronizar: dejar el switch en OFF (modoOffline sigue true)
+                const toggle = document.getElementById('offlineToggle');
+                if (toggle) toggle.checked = false;
+                await actualizarUIOffline();
+                return;
+            }
+        } else {
+            // Sin pendientes: simplemente recargar Supabase
+            await loadInventory();
+            await loadSales();
+            await guardarInventarioCache();
+        }
+        modoOffline = false;
+        await actualizarUIOffline();
+        await mostrarAlerta('🌐 Modo en línea activado.\nConectado a Supabase.', 'success');
+
+    } else {
+        // El usuario quiere trabajar sin internet (switch → OFF)
+        modoOffline = true;
+        await guardarInventarioCache();
+        await actualizarUIOffline();
+        await mostrarAlerta('⚡ Modo sin internet activado.\nLas ventas y productos se guardan localmente.', 'info');
+    }
+}
+
+// ──────────────────────────────────────────────────────────
+// Detección automática de caída / recuperación de internet
+// ──────────────────────────────────────────────────────────
+async function manejarCaidaInternet() {
+    if (modoOffline) return; // ya estamos en modo offline, nada que hacer
+    modoOffline = true;
+    await guardarInventarioCache();
+    await actualizarUIOffline();
+
+    // Abrir el panel de modo de trabajo para que el usuario lo vea
+    const panel = document.getElementById('panelModoTrabajo');
+    if (panel && !panel.classList.contains('abierto')) {
+        panel.classList.add('abierto');
+        const btn = document.getElementById('btnModoTrabajo');
+        if (btn) {
+            const flecha = btn.querySelector('span:last-child');
+            if (flecha) flecha.textContent = '▲';
+        }
+    }
+
+    await mostrarAlerta(
+        '📵 Se perdió la conexión a internet.\nSe activó el Modo Sin Internet automáticamente.\nPuedes seguir vendiendo y registrando productos.\nAl recuperar internet, sincroniza los datos.', 
+        'warn'
+    );
+}
+
+async function manejarRecuperacionInternet() {
+    if (!modoOffline) return; // ya estamos en línea
+    if (_reconexionPendiente) return; // ya hay un diálogo abierto
+    _reconexionPendiente = true;
+
+    const n = await contarPendientes();
+
+    // Abrir el panel
+    const panel = document.getElementById('panelModoTrabajo');
+    if (panel && !panel.classList.contains('abierto')) {
+        panel.classList.add('abierto');
+        const btn = document.getElementById('btnModoTrabajo');
+        if (btn) {
+            const flecha = btn.querySelector('span:last-child');
+            if (flecha) flecha.textContent = '▲';
+        }
+    }
+
+    if (n > 0) {
+        const ok = await mostrarConfirm(
+            `📶 ¡Volvió el internet!\nHay ${n} operación(es) guardada(s) sin sincronizar.\n¿Sincronizar ahora con Supabase y volver al modo en línea?`,
+            'warn'
+        );
+        if (ok) {
+            await sincronizarConSupabase();
+            modoOffline = false;
+        }
+        // Si dice NO: se queda en modo offline hasta que él decida
+    } else {
+        // Sin pendientes: volver automáticamente a Supabase
+        modoOffline = false;
+        await loadInventory();
+        await loadSales();
+        await guardarInventarioCache();
+        await mostrarAlerta('📶 ¡Volvió el internet!\nConectado a Supabase nuevamente.', 'success');
+    }
+
+    await actualizarUIOffline();
+    _reconexionPendiente = false;
+}
+
+// ──────────────────────────────────────────────────────────
+// Inicializar módulo
+// ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        offlineDB = await abrirOfflineDB();
+    } catch(e) {
+        console.warn('IndexedDB no disponible:', e);
+    }
+
+    // Switch ON por defecto (en línea / Supabase)
+    modoOffline = false;
+    await actualizarUIOffline();
+
+    // Botón expandir/contraer panel
+    const btnModo = document.getElementById('btnModoTrabajo');
+    const panel   = document.getElementById('panelModoTrabajo');
+    if (btnModo && panel) {
+        btnModo.addEventListener('click', () => {
+            panel.classList.toggle('abierto');
+            const flecha = btnModo.querySelector('span:last-child');
+            if (flecha) flecha.textContent = panel.classList.contains('abierto') ? '▲' : '▼';
+        });
+    }
+
+    // Cambio manual del switch
+    const toggle = document.getElementById('offlineToggle');
+    if (toggle) {
+        // Al cargar: switch en ON (checked = true = Supabase)
+        toggle.checked = true;
+        toggle.addEventListener('change', async () => {
+            await manejarCambioSwitch(toggle.checked);
+        });
+    }
+
+    // Botón sincronizar manual
+    const syncBtn = document.getElementById('offlineSyncBtn');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', async () => {
+            await sincronizarConSupabase();
+            // Si la sync fue exitosa, volver a ON
+            const n = await contarPendientes();
+            if (n === 0 && modoOffline) {
+                modoOffline = false;
+                await actualizarUIOffline();
+            }
+        });
+    }
+
+    // Detectar caída de internet (evento 'offline')
+    window.addEventListener('offline', () => {
+        manejarCaidaInternet();
+    });
+
+    // Detectar recuperación de internet (evento 'online')
+    window.addEventListener('online', () => {
+        manejarRecuperacionInternet();
+    });
+
+    // Al arrancar: si ya no hay internet (ej: recarga en modo avión), activar offline
+    if (!navigator.onLine) {
+        modoOffline = true;
+        await cargarInventarioDesdeCache();
+        await actualizarUIOffline();
+    }
+});
+
+// ──────────────────────────────────────────────────────────
+// PARCHEO de handleSaveProduct para modo offline
+// ──────────────────────────────────────────────────────────
+const _handleSaveProductOriginal = handleSaveProduct;
+window.handleSaveProduct = async function() {
+    if (!modoOffline) {
+        return _handleSaveProductOriginal();
+    }
+    // MODO OFFLINE: guardar en IndexedDB
+    const codigo    = inputCodigoBarras.value.trim();
+    const nombre    = inputNombreProducto.value.trim();
+    const precio    = parseInt(inputPrecioProducto.value);
+    const cantidad  = parseInt(inputCantidadProducto.value);
+    const categoria = inputCategoriaProducto ? inputCategoriaProducto.value : 'Otras';
+
+    if (!nombre)                          { await mostrarAlerta('Por favor, ingresa el nombre del producto.', 'warn'); return; }
+    if (isNaN(precio) || precio <= 0)     { await mostrarAlerta('Por favor, ingresa un precio válido.', 'warn'); return; }
+    if (isNaN(cantidad) || cantidad <= 0) { await mostrarAlerta('Por favor, ingresa una cantidad válida.', 'warn'); return; }
+    if (!categoria)                       { await mostrarAlerta('Por favor, selecciona una categoría.', 'warn'); return; }
+
+    let urlImagen = '';
+    if (archivoImagenFisico) {
+        urlImagen = await new Promise((res) => {
+            const reader = new FileReader();
+            reader.onload = e => res(e.target.result);
+            reader.readAsDataURL(archivoImagenFisico);
+        });
+    } else if (editingProductId !== null) {
+        const p = inventory.find(p => p.id.toString() === editingProductId.toString());
+        urlImagen = p ? p.imagen : '';
+    }
+    // En modo offline la imagen es opcional — se puede agregar al sincronizar
+
+    await guardarProductoOffline({ codigoBarras: codigo, nombre, precio, cantidad, imagen: urlImagen, categoria });
+    resetFormAndMode();
+    await mostrarAlerta(`✅ Producto "${nombre}" guardado localmente.\nSe subirá a Supabase al sincronizar.`, 'success');
+};
+
+if (btnGuardarProducto) {
+    btnGuardarProducto.removeEventListener('click', handleSaveProduct);
+    btnGuardarProducto.addEventListener('click', window.handleSaveProduct);
+}
