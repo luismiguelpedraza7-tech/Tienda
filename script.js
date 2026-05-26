@@ -1632,7 +1632,7 @@ async function subirImagenSupabase(archivo) {
 
     const { data, error } = await supabaseClient
         .storage
-        .from('productos')
+        .from('productos-imagenes')
         .upload(rutaArchivo, archivoParaSubir);
 
     if (error) {
@@ -1643,7 +1643,7 @@ async function subirImagenSupabase(archivo) {
 
     const { data: publicUrlData } = await supabaseClient
         .storage
-        .from('productos')
+        .from('productos-imagenes')
         .getPublicUrl(rutaArchivo);
 
     return publicUrlData.publicUrl;
