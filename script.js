@@ -266,7 +266,7 @@ const inputProductoImagen = document.querySelector("#inputProductoImagen");
 const previewProductoImagen = document.querySelector("#previewProductoImagen");
 const btnSeleccionarImagen = document.querySelector("#btnSeleccionarImagen");
 
-const inputCodigoBarras = document.querySelector("#inputCodigoBarras"); 
+const inputCodigo_Barras = document.querySelector("#inputCodigo_Barras"); 
 const btnEscanearInventario = document.querySelector("#btnEscanearInventario"); 
 const inputNombreProducto = document.querySelector("#inputNombreProducto");
 const inputPrecioProducto = document.querySelector("#inputPrecioProducto");
@@ -541,12 +541,12 @@ function onScanSuccess(decodedText, decodedResult) {
     detenerEscaner();
     
     if (objetivoEscaneo === 'inventario') {
-        inputCodigoBarras.value = codigoLimpio;
-        inputCodigoBarras.dispatchEvent(new Event('input', { bubbles: true }));
+        inputCodigo_Barras.value = codigoLimpio;
+        inputCodigo_Barras.dispatchEvent(new Event('input', { bubbles: true }));
         inputNombreProducto.focus(); 
     } else if (objetivoEscaneo === 'ventas') {
         // Buscar producto por código exacto y seleccionarlo directo
-        const productoEscaneado = inventory.find(p => p.codigoBarras && p.codigoBarras === codigoLimpio && p.cantidad > 0);
+        const productoEscaneado = inventory.find(p => p.codigo_Barras && p.codigo_Barras === codigoLimpio && p.cantidad > 0);
         if (productoEscaneado) {
             // Coincidencia exacta → ir directo al panel de cantidad sin mostrar dropdown
             inputBuscarProductVenta.value = productoEscaneado.nombre;
@@ -857,7 +857,7 @@ function renderGridProductosVenta(searchTerm = '') {
     // El grid de tarjetas fue eliminado — solo se mantiene la selección automática por código de barras exacto
     const rawSearchTerm = (searchTerm || '').trim();
     if (rawSearchTerm !== '') {
-        const exacto = inventory.find(p => p.codigoBarras && p.codigoBarras === rawSearchTerm && p.cantidad > 0);
+        const exacto = inventory.find(p => p.codigo_Barras && p.codigo_Barras === rawSearchTerm && p.cantidad > 0);
         if (exacto) {
             seleccionarProductoVenta(exacto.id);
         }
@@ -958,7 +958,7 @@ function updateSalesDropdown(searchTerm = '') {
         sugerenciasActuales = inventory.filter(p => {
             if (p.cantidad <= 0) return false;
             const coincideNombre = normalizeStringForSearch(p.nombre).includes(normalizado);
-            const coincideCodigo = p.codigoBarras && p.codigoBarras.includes(rawTerm);
+            const coincideCodigo = p.codigo_Barras && p.codigo_Barras.includes(rawTerm);
             return coincideNombre || coincideCodigo;
         }).slice(0, 8);
 
@@ -975,7 +975,7 @@ function updateSalesDropdown(searchTerm = '') {
                 <img src="${p.imagen || 'https://via.placeholder.com/38'}" alt="${p.nombre}">
                 <div class="autocomplete-item-info">
                     <span class="autocomplete-item-nombre">${p.nombre}</span>
-                    <span class="autocomplete-item-detalle">Disponible: ${p.cantidad} uds${p.codigoBarras ? ' · Cód: ' + p.codigoBarras : ''}</span>
+                    <span class="autocomplete-item-detalle">Disponible: ${p.cantidad} uds${p.codigo_Barras ? ' · Cód: ' + p.codigo_Barras : ''}</span>
                 </div>
                 <span class="autocomplete-item-precio">$${Number(p.precio).toLocaleString('es-CO')}</span>
             `;
@@ -1520,7 +1520,7 @@ function renderProducts(productsToRender = null) {
         
         const codigoElement = nuevaTarjeta.querySelector(".producto-codigo");
         if (codigoElement) {
-            codigoElement.textContent = product.codigoBarras ? `Cod: ${product.codigoBarras}` : 'Cod: N/A';
+            codigoElement.textContent = product.codigo_Barras ? `Cod: ${product.codigo_Barras}` : 'Cod: N/A';
         }
 
         nuevaTarjeta.querySelector(".producto-precio").textContent = `$${product.precio}`; 
@@ -1666,7 +1666,7 @@ btnSeleccionarImagen.addEventListener('click', (e) => {
 // LÓGICA DE FORMULARIO (Añadir/Editar a Supabase)
 // ==========================================
 function resetFormAndMode() {
-    inputCodigoBarras.value = ''; 
+    inputCodigo_Barras.value = ''; 
     inputNombreProducto.value = '';
     inputPrecioProducto.value = '';
     inputCantidadProducto.value = ''; 
@@ -1678,7 +1678,7 @@ function resetFormAndMode() {
 }
 
 async function handleSaveProduct() {
-    const codigo = inputCodigoBarras.value.trim(); 
+    const codigo = inputCodigo_Barras.value.trim(); 
     const nombre = inputNombreProducto.value.trim();
     const precio = parseInt(inputPrecioProducto.value); 
     const cantidad = parseInt(inputCantidadProducto.value);
@@ -1738,7 +1738,7 @@ async function handleSaveProduct() {
             const { error } = await supabaseClient
                 .from('productos')
                 .insert([{ 
-                    "codigoBarras": codigo,
+                    "codigo_Barras": codigo,
                     nombre, precio, cantidad, 
                     imagen: urlImagenFinal, 
                     user_id: user.id,
@@ -1769,7 +1769,7 @@ function editProduct(productId) {
     const productToEdit = inventory.find(p => p.id.toString() === productId.toString());
     if (productToEdit) {
         editingProductId = productId; 
-        inputCodigoBarras.value = productToEdit.codigoBarras || ''; 
+        inputCodigo_Barras.value = productToEdit.codigo_Barras || ''; 
         inputNombreProducto.value = productToEdit.nombre;
         inputPrecioProducto.value = productToEdit.precio;
         inputCantidadProducto.value = productToEdit.cantidad;
@@ -1796,7 +1796,7 @@ btnLimpiarFormulario.addEventListener('click', function() {
 btnGuardarProducto.addEventListener("click", handleSaveProduct); 
 
 // ATAJOS DE TECLADO (ENTER)
-inputCodigoBarras.addEventListener("keydown", function(event) {
+inputCodigo_Barras.addEventListener("keydown", function(event) {
     if (event.key === "Enter" && pantallaInventario.style.display !== 'none') {
         event.preventDefault(); 
         inputNombreProducto.focus(); 
@@ -1847,7 +1847,7 @@ function searchProducts() {
 
     searchResults = inventory.filter(product => {
         const coincidenciaNombre = normalizeStringForSearch(product.nombre).includes(searchTerm);
-        const coincidenciaCodigo = product.codigoBarras && product.codigoBarras.includes(searchTermRaw);
+        const coincidenciaCodigo = product.codigo_Barras && product.codigo_Barras.includes(searchTermRaw);
         return coincidenciaNombre || coincidenciaCodigo;
     });
 
@@ -1917,7 +1917,7 @@ async function exportInventoryToCSV() {
         const productTotal = product.precio * product.cantidad;
         totalInventoryValue += productTotal;
         const escapedProductName = `"${product.nombre.replace(/"/g, '""')}"`;
-        const codigoExp = product.codigoBarras ? product.codigoBarras : "N/A";
+        const codigoExp = product.codigo_Barras ? product.codigo_Barras : "N/A";
 
         csvContent += `${codigoExp},${escapedProductName},${product.precio},${product.cantidad},${productTotal}\n`;
     });
@@ -2021,7 +2021,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (inputBuscarProductVenta) {
         inputBuscarProductVenta.addEventListener('input', () => {
             const term = inputBuscarProductVenta.value.trim();
-            const productoEncontrado = inventory.find(p => p.codigoBarras === term);
+            const productoEncontrado = inventory.find(p => p.codigo_Barras === term);
             
             if (productoEncontrado) {
                 selectProductoVenta.value = productoEncontrado.id;
@@ -3352,7 +3352,7 @@ function renderCombos() {
             if (!q) { autoList.classList.remove('visible'); return; }
             const resultados = inventory.filter(p =>
                 (p.nombre || '').toLowerCase().includes(q) ||
-                (p.codigoBarras || '').includes(q)
+                (p.codigo_Barras || '').includes(q)
             ).slice(0, 8);
             if (!resultados.length) { autoList.classList.remove('visible'); return; }
             resultados.forEach(p => {
@@ -3827,7 +3827,7 @@ async function sincronizarConSupabase() {
                 if (!user) throw new Error('Sin sesión activa');
                 const d = item.datos;
                 const { error } = await supabaseClient.from('productos').insert([{
-                    codigoBarras: d.codigoBarras || null,
+                    codigo_Barras: d.codigo_Barras || null,
                     nombre:       d.nombre,
                     precio:       d.precio,
                     cantidad:     d.cantidad,
@@ -4075,7 +4075,7 @@ window.handleSaveProduct = async function() {
         return _handleSaveProductOriginal();
     }
     // MODO OFFLINE: guardar en IndexedDB
-    const codigo    = inputCodigoBarras.value.trim();
+    const codigo    = inputCodigo_Barras.value.trim();
     const nombre    = inputNombreProducto.value.trim();
     const precio    = parseInt(inputPrecioProducto.value);
     const cantidad  = parseInt(inputCantidadProducto.value);
@@ -4099,7 +4099,7 @@ window.handleSaveProduct = async function() {
     }
     // En modo offline la imagen es opcional — se puede agregar al sincronizar
 
-    await guardarProductoOffline({ codigoBarras: codigo, nombre, precio, cantidad, imagen: urlImagen, categoria });
+    await guardarProductoOffline({ codigo_Barras: codigo, nombre, precio, cantidad, imagen: urlImagen, categoria });
     resetFormAndMode();
     await mostrarAlerta(`✅ Producto "${nombre}" guardado localmente.\nSe subirá a Supabase al sincronizar.`, 'success');
 };
