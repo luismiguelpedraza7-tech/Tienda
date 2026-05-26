@@ -1797,7 +1797,7 @@ btnLimpiarFormulario.addEventListener('click', function() {
     resetFormAndMode();
 });
 
-btnGuardarProducto.addEventListener("click", handleSaveProduct); 
+// El listener de btnGuardarProducto se registra una sola vez en el bloque offline (ver más abajo)
 
 // ATAJOS DE TECLADO (ENTER)
 inputCodigoBarras.addEventListener("keydown", function(event) {
@@ -2002,25 +2002,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Modo previsualizador (ej: Yachai Codex): mostrar pantalla de inicio directamente
         // sin pasar por Supabase, para que la previsualización funcione correctamente.
         showScreen('pantalla-inicio', false);
-        return;
+    } else {
+        checkAuthStatus();
     }
-
-    // Fallback visual: si en 6s Supabase no responde, mostrar login
-    const fallback = setTimeout(() => {
-        if (!document.querySelector('.activa')) {
-            showScreen('pantalla-login', false);
-        }
-    }, 6000);
-
-    // onAuthStateChange detecta TANTO la sesión existente COMO el callback de Google OAuth
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        clearTimeout(fallback);
-        if (session) {
-            checkAuthStatus(true);
-        } else {
-            showScreen('pantalla-login', false);
-        }
-    });
 });
 
 // =========================================================
