@@ -328,7 +328,11 @@ async function loadInventory() {
     if (error) {
         console.error("Error cargando inventario:", error);
     } else {
-        inventory = data; 
+        inventory = data.map(p => ({
+            ...p,
+            codigoBarras: p.codigo_barras,
+            imagen: p.imagen_url
+        }));
         renderProducts();
         updateProductCount();
     }
@@ -1721,9 +1725,9 @@ async function handleSaveProduct() {
             const { error } = await supabaseClient
                 .from('productos')
                 .update({ 
-                    "codigoBarras": codigo, 
+                    codigo_barras: codigo, 
                     nombre, precio, cantidad, 
-                    imagen: urlImagenFinal, 
+                    imagen_url: urlImagenFinal, 
                     categoria 
                 })
                 .eq('id', editingProductId);
@@ -1738,9 +1742,9 @@ async function handleSaveProduct() {
             const { error } = await supabaseClient
                 .from('productos')
                 .insert([{ 
-                    "codigo_Barras": codigo,
+                    codigo_barras: codigo,
                     nombre, precio, cantidad, 
-                    imagen: urlImagenFinal, 
+                    imagen_url: urlImagenFinal, 
                     user_id: user.id,
                     categoria
                 }]);
