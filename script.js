@@ -266,7 +266,7 @@ const inputProductoImagen = document.querySelector("#inputProductoImagen");
 const previewProductoImagen = document.querySelector("#previewProductoImagen");
 const btnSeleccionarImagen = document.querySelector("#btnSeleccionarImagen");
 
-const inputCodigo_Barras = document.querySelector("#inputCodigo_Barras"); 
+const inputCodigoBarras = document.querySelector("#inputCodigoBarras"); 
 const btnEscanearInventario = document.querySelector("#btnEscanearInventario"); 
 const inputNombreProducto = document.querySelector("#inputNombreProducto");
 const inputPrecioProducto = document.querySelector("#inputPrecioProducto");
@@ -545,8 +545,8 @@ function onScanSuccess(decodedText, decodedResult) {
     detenerEscaner();
     
     if (objetivoEscaneo === 'inventario') {
-        inputCodigo_Barras.value = codigoLimpio;
-        inputCodigo_Barras.dispatchEvent(new Event('input', { bubbles: true }));
+        inputCodigoBarras.value = codigoLimpio;
+        inputCodigoBarras.dispatchEvent(new Event('input', { bubbles: true }));
         inputNombreProducto.focus(); 
     } else if (objetivoEscaneo === 'ventas') {
         // Buscar producto por código exacto y seleccionarlo directo
@@ -1670,7 +1670,7 @@ btnSeleccionarImagen.addEventListener('click', (e) => {
 // LÓGICA DE FORMULARIO (Añadir/Editar a Supabase)
 // ==========================================
 function resetFormAndMode() {
-    inputCodigo_Barras.value = ''; 
+    inputCodigoBarras.value = ''; 
     inputNombreProducto.value = '';
     inputPrecioProducto.value = '';
     inputCantidadProducto.value = ''; 
@@ -1682,7 +1682,7 @@ function resetFormAndMode() {
 }
 
 async function handleSaveProduct() {
-    const codigo = inputCodigo_Barras.value.trim(); 
+    const codigo = inputCodigoBarras.value.trim(); 
     const nombre = inputNombreProducto.value.trim();
     const precio = parseInt(inputPrecioProducto.value); 
     const cantidad = parseInt(inputCantidadProducto.value);
@@ -1773,7 +1773,7 @@ function editProduct(productId) {
     const productToEdit = inventory.find(p => p.id.toString() === productId.toString());
     if (productToEdit) {
         editingProductId = productId; 
-        inputCodigo_Barras.value = productToEdit.codigo_Barras || ''; 
+        inputCodigoBarras.value = productToEdit.codigo_Barras || ''; 
         inputNombreProducto.value = productToEdit.nombre;
         inputPrecioProducto.value = productToEdit.precio;
         inputCantidadProducto.value = productToEdit.cantidad;
@@ -1800,7 +1800,7 @@ btnLimpiarFormulario.addEventListener('click', function() {
 btnGuardarProducto.addEventListener("click", handleSaveProduct); 
 
 // ATAJOS DE TECLADO (ENTER)
-inputCodigo_Barras.addEventListener("keydown", function(event) {
+inputCodigoBarras.addEventListener("keydown", function(event) {
     if (event.key === "Enter" && pantallaInventario.style.display !== 'none') {
         event.preventDefault(); 
         inputNombreProducto.focus(); 
@@ -4095,7 +4095,7 @@ window.handleSaveProduct = async function() {
         return _handleSaveProductOriginal();
     }
     // MODO OFFLINE: guardar en IndexedDB
-    const codigo    = inputCodigo_Barras.value.trim();
+    const codigo    = inputCodigoBarras.value.trim();
     const nombre    = inputNombreProducto.value.trim();
     const precio    = parseInt(inputPrecioProducto.value);
     const cantidad  = parseInt(inputCantidadProducto.value);
