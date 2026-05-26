@@ -1784,7 +1784,7 @@ function editProduct(productId) {
 
         btnGuardarProducto.textContent = 'Guardar Cambios';
         btnLimpiarFormulario.textContent = 'Cancelar Edición';
-        pantallaInventario?.querySelector('.formulario-producto-nuevo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        pantallaInventario.querySelector('.formulario-producto-nuevo').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 }
 
@@ -2002,9 +2002,25 @@ document.addEventListener('DOMContentLoaded', () => {
         // Modo previsualizador (ej: Yachai Codex): mostrar pantalla de inicio directamente
         // sin pasar por Supabase, para que la previsualización funcione correctamente.
         showScreen('pantalla-inicio', false);
-    } else {
-        checkAuthStatus();
+        return;
     }
+
+    // Fallback visual: si en 6s Supabase no responde, mostrar login
+    const fallback = setTimeout(() => {
+        if (!document.querySelector('.activa')) {
+            showScreen('pantalla-login', false);
+        }
+    }, 6000);
+
+    // onAuthStateChange detecta TANTO la sesión existente COMO el callback de Google OAuth
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        clearTimeout(fallback);
+        if (session) {
+            checkAuthStatus(true);
+        } else {
+            showScreen('pantalla-login', false);
+        }
+    });
 });
 
 // =========================================================
