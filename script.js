@@ -1784,7 +1784,7 @@ function editProduct(productId) {
 
         btnGuardarProducto.textContent = 'Guardar Cambios';
         btnLimpiarFormulario.textContent = 'Cancelar Edición';
-        pantallaInventario.querySelector('.formulario-producto-nuevo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        pantallaInventario?.querySelector('.formulario-producto-nuevo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 }
 
