@@ -331,6 +331,7 @@ async function loadInventory() {
         inventory = data.map(p => ({
             ...p,
             codigoBarras: p.codigo_barras,
+            codigo_Barras: p.codigo_barras,
             imagen: p.imagen_url
         }));
         renderProducts();
@@ -2367,12 +2368,12 @@ function renderPedidosAdmin(estadoFiltro = 'todos') {
  
         card.querySelectorAll('.btn-accion-pedido').forEach(btn => {
             btn.addEventListener('click', () =>
-                cambiarEstadoPedido(btn.dataset.id, btn.dataset.nuevoEstado, btn)
+                cambiarEstadoPedido(parseInt(btn.dataset.id), btn.dataset.nuevoEstado, btn)
             );
         });
 
         card.querySelectorAll('.btn-eliminar-pedido-cancelado').forEach(btn => {
-            btn.addEventListener('click', () => eliminarPedidoCancelado(btn.dataset.id));
+            btn.addEventListener('click', () => eliminarPedidoCancelado(parseInt(btn.dataset.id)));
         });
  
         el.appendChild(card);
