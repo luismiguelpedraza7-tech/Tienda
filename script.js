@@ -2367,12 +2367,12 @@ function renderPedidosAdmin(estadoFiltro = 'todos') {
  
         card.querySelectorAll('.btn-accion-pedido').forEach(btn => {
             btn.addEventListener('click', () =>
-                cambiarEstadoPedido(parseInt(btn.dataset.id), btn.dataset.nuevoEstado, btn)
+                cambiarEstadoPedido(btn.dataset.id, btn.dataset.nuevoEstado, btn)
             );
         });
 
         card.querySelectorAll('.btn-eliminar-pedido-cancelado').forEach(btn => {
-            btn.addEventListener('click', () => eliminarPedidoCancelado(parseInt(btn.dataset.id)));
+            btn.addEventListener('click', () => eliminarPedidoCancelado(btn.dataset.id));
         });
  
         el.appendChild(card);
