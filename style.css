@@ -177,6 +177,19 @@ h1 {
   z-index: 10;
 }
 
+/* Logo imagen Softven */
+.softvent-logo-img {
+  position: absolute;
+  top: 22px;
+  right: 36px;
+  width: 280px;
+  max-width: 38vw;
+  height: auto;
+  pointer-events: none;
+  z-index: 10;
+  filter: drop-shadow(2px 4px 12px rgba(0,0,0,0.7));
+}
+
 /* ==============================
    MENÚ LATERAL — estilos internos
    (posición y display se definen arriba en la sección global)
