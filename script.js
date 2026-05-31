@@ -2324,7 +2324,7 @@ function renderPedidosAdmin(estadoFiltro = 'todos') {
         card.innerHTML = `
             <div class="pedido-admin-header">
                 <div class="pedido-admin-id">
-                    <strong>#${String(pedido.numero_pedido || pedido.id).padStart(3,'0')}</strong>
+                    <strong>#${pedido.id}</strong>
                     <span class="pedido-estado ${etq.clase}">${etq.texto}</span>
                 </div>
                 <div class="pedido-admin-total">
@@ -2367,12 +2367,12 @@ function renderPedidosAdmin(estadoFiltro = 'todos') {
  
         card.querySelectorAll('.btn-accion-pedido').forEach(btn => {
             btn.addEventListener('click', () =>
-                cambiarEstadoPedido(parseInt(btn.dataset.id), btn.dataset.nuevoEstado, btn)
+                cambiarEstadoPedido(btn.dataset.id, btn.dataset.nuevoEstado, btn)
             );
         });
 
         card.querySelectorAll('.btn-eliminar-pedido-cancelado').forEach(btn => {
-            btn.addEventListener('click', () => eliminarPedidoCancelado(parseInt(btn.dataset.id)));
+            btn.addEventListener('click', () => eliminarPedidoCancelado(btn.dataset.id));
         });
  
         el.appendChild(card);
@@ -2384,11 +2384,11 @@ function renderPedidosAdmin(estadoFiltro = 'todos') {
 // ---------------------------------------------------------------
 async function cambiarEstadoPedido(pedidoId, nuevoEstado, btnEl) {
     const msgs = {
-        pago_confirmado: `¿Confirmar el PAGO del pedido #${pedidosAdmin.find(p=>p.id===pedidoId)?.numero_pedido?.toString().padStart(3,'0') || pedidoId}?\n\nEl inventario se descontará automáticamente.`,
-        entregado:       `¿Confirmar la entrega del pedido #${pedidosAdmin.find(p=>p.id===pedidoId)?.numero_pedido?.toString().padStart(3,'0') || pedidoId}?\n\nEl pedido pasará al historial y dejará de aparecer en Activos.`,
-        cancelado:       `¿Cancelar el pedido #${pedidosAdmin.find(p=>p.id===pedidoId)?.numero_pedido?.toString().padStart(3,'0') || pedidoId}?`,
+        pago_confirmado: `¿Confirmar el PAGO del pedido #${pedidoId}?\n\nEl inventario se descontará automáticamente.`,
+        entregado:       `¿Confirmar la entrega del pedido #${pedidoId}?\n\nEl pedido pasará al historial y dejará de aparecer en Activos.`,
+        cancelado:       `¿Cancelar el pedido #${pedidoId}?`,
     };
-    if (!await mostrarConfirm(msgs[nuevoEstado] || `¿Cambiar estado del pedido #${pedidosAdmin.find(p=>p.id===pedidoId)?.numero_pedido?.toString().padStart(3,'0') || pedidoId}?`, nuevoEstado === 'cancelado' ? 'danger' : 'warn')) return;
+    if (!await mostrarConfirm(msgs[nuevoEstado] || `¿Cambiar estado del pedido #${pedidoId}?`, nuevoEstado === 'cancelado' ? 'danger' : 'warn')) return;
 
     const textoOrig   = btnEl.textContent;
     btnEl.disabled    = true;
@@ -2428,13 +2428,13 @@ async function cambiarEstadoPedido(pedidoId, nuevoEstado, btnEl) {
 
     if (nuevoEstado === 'entregado') {
         renderHistorialOnline();
-        await mostrarAlerta(`✅ Pedido #${pedidosAdmin.find(p=>p.id===pedidoId)?.numero_pedido?.toString().padStart(3,'0') || pedidoId} marcado como entregado.\nAhora aparece en el historial de entregas.`, 'success');
+        await mostrarAlerta(`✅ Pedido #${pedidoId} marcado como entregado.\nAhora aparece en el historial de entregas.`, 'success');
     }
 
     if (nuevoEstado === 'pago_confirmado') {
         await loadInventory();
         await loadSales();
-        await mostrarAlerta(`✅ Pago del pedido #${pedidosAdmin.find(p=>p.id===pedidoId)?.numero_pedido?.toString().padStart(3,'0') || pedidoId} confirmado.\nInventario descontado e historial actualizado.`, 'success');
+        await mostrarAlerta(`✅ Pago del pedido #${pedidoId} confirmado.\nInventario descontado e historial actualizado.`, 'success');
     }
 }
 
