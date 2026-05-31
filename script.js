@@ -1948,7 +1948,7 @@ btnExportarDatos.addEventListener("click", exportInventoryToCSV);
 async function handleLoginWithGoogle() {
     const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: "https://franklin-2000.github.io/tienda-online/" } 
+        options: { redirectTo: "https://luismiguelpedraza7-tech.github.io/Tienda/" } 
     });
     if (error) {
         console.error('Error al iniciar sesión con Google:', error);
@@ -2367,12 +2367,12 @@ function renderPedidosAdmin(estadoFiltro = 'todos') {
  
         card.querySelectorAll('.btn-accion-pedido').forEach(btn => {
             btn.addEventListener('click', () =>
-                cambiarEstadoPedido(btn.dataset.id, btn.dataset.nuevoEstado, btn)
+                cambiarEstadoPedido(parseInt(btn.dataset.id), btn.dataset.nuevoEstado, btn)
             );
         });
 
         card.querySelectorAll('.btn-eliminar-pedido-cancelado').forEach(btn => {
-            btn.addEventListener('click', () => eliminarPedidoCancelado(btn.dataset.id));
+            btn.addEventListener('click', () => eliminarPedidoCancelado(parseInt(btn.dataset.id)));
         });
  
         el.appendChild(card);
