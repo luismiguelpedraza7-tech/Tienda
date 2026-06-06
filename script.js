@@ -316,14 +316,14 @@ let objetivoEscaneo = '';
 // ==========================================
 // FUNCIONES DE NUBE SUPABASE — INVENTARIO
 // ==========================================
-async function loadInventory() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return; 
+// ID fijo del dueno de la tienda
+const TIENDA_OWNER_ID = 'e238b6d8-7e51-4e9e-b068-382bce3d9f3d';
 
+async function loadInventory() {
     const { data, error } = await supabaseClient
         .from('productos')
         .select('*')
-        .eq('user_id', user.id); 
+        .eq('user_id', TIENDA_OWNER_ID); 
 
     if (error) {
         console.error("Error cargando inventario:", error);
@@ -331,7 +331,6 @@ async function loadInventory() {
         inventory = data.map(p => ({
             ...p,
             codigoBarras: p.codigo_barras,
-            codigo_Barras: p.codigo_barras,
             imagen: p.imagen_url
         }));
         renderProducts();
@@ -1949,7 +1948,7 @@ btnExportarDatos.addEventListener("click", exportInventoryToCSV);
 async function handleLoginWithGoogle() {
     const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: "https://franklin-2000.github.io/tienda-online/" } 
+        options: { redirectTo: "https://luismiguelpedraza7-tech.github.io/Tienda/" } 
     });
     if (error) {
         console.error('Error al iniciar sesión con Google:', error);
