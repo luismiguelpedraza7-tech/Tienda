@@ -550,7 +550,7 @@ function onScanSuccess(decodedText, decodedResult) {
         inputNombreProducto.focus(); 
     } else if (objetivoEscaneo === 'ventas') {
         // Buscar producto por código exacto y seleccionarlo directo
-        const productoEscaneado = inventory.find(p => p.codigo_Barras && p.codigo_Barras === codigoLimpio && p.cantidad > 0);
+        const productoEscaneado = inventory.find(p => p.codigo_barras && p.codigo_barras === codigoLimpio && p.cantidad > 0);
         if (productoEscaneado) {
             // Coincidencia exacta → ir directo al panel de cantidad sin mostrar dropdown
             inputBuscarProductVenta.value = productoEscaneado.nombre;
@@ -861,7 +861,7 @@ function renderGridProductosVenta(searchTerm = '') {
     // El grid de tarjetas fue eliminado — solo se mantiene la selección automática por código de barras exacto
     const rawSearchTerm = (searchTerm || '').trim();
     if (rawSearchTerm !== '') {
-        const exacto = inventory.find(p => p.codigo_Barras && p.codigo_Barras === rawSearchTerm && p.cantidad > 0);
+        const exacto = inventory.find(p => p.codigo_barras && p.codigo_barras === rawSearchTerm && p.cantidad > 0);
         if (exacto) {
             seleccionarProductoVenta(exacto.id);
         }
@@ -962,7 +962,7 @@ function updateSalesDropdown(searchTerm = '') {
         sugerenciasActuales = inventory.filter(p => {
             if (p.cantidad <= 0) return false;
             const coincideNombre = normalizeStringForSearch(p.nombre).includes(normalizado);
-            const coincideCodigo = p.codigo_Barras && p.codigo_Barras.includes(rawTerm);
+            const coincideCodigo = p.codigo_barras && p.codigo_barras.includes(rawTerm);
             return coincideNombre || coincideCodigo;
         }).slice(0, 8);
 
@@ -979,7 +979,7 @@ function updateSalesDropdown(searchTerm = '') {
                 <img src="${p.imagen || 'https://via.placeholder.com/38'}" alt="${p.nombre}">
                 <div class="autocomplete-item-info">
                     <span class="autocomplete-item-nombre">${p.nombre}</span>
-                    <span class="autocomplete-item-detalle">Disponible: ${p.cantidad} uds${p.codigo_Barras ? ' · Cód: ' + p.codigo_Barras : ''}</span>
+                    <span class="autocomplete-item-detalle">Disponible: ${p.cantidad} uds${p.codigo_barras ? ' · Cód: ' + p.codigo_barras : ''}</span>
                 </div>
                 <span class="autocomplete-item-precio">$${Number(p.precio).toLocaleString('es-CO')}</span>
             `;
@@ -1524,7 +1524,7 @@ function renderProducts(productsToRender = null) {
         
         const codigoElement = nuevaTarjeta.querySelector(".producto-codigo");
         if (codigoElement) {
-            codigoElement.textContent = product.codigo_Barras ? `Cod: ${product.codigo_Barras}` : 'Cod: N/A';
+            codigoElement.textContent = product.codigo_barras ? `Cod: ${product.codigo_barras}` : 'Cod: N/A';
         }
 
         nuevaTarjeta.querySelector(".producto-precio").textContent = `$${product.precio}`; 
@@ -1773,7 +1773,7 @@ function editProduct(productId) {
     const productToEdit = inventory.find(p => p.id.toString() === productId.toString());
     if (productToEdit) {
         editingProductId = productId; 
-        inputCodigoBarras.value = productToEdit.codigo_Barras || ''; 
+        inputCodigoBarras.value = productToEdit.codigo_barras || ''; 
         inputNombreProducto.value = productToEdit.nombre;
         inputPrecioProducto.value = productToEdit.precio;
         inputCantidadProducto.value = productToEdit.cantidad;
@@ -1851,7 +1851,7 @@ function searchProducts() {
 
     searchResults = inventory.filter(product => {
         const coincidenciaNombre = normalizeStringForSearch(product.nombre).includes(searchTerm);
-        const coincidenciaCodigo = product.codigo_Barras && product.codigo_Barras.includes(searchTermRaw);
+        const coincidenciaCodigo = product.codigo_barras && product.codigo_barras.includes(searchTermRaw);
         return coincidenciaNombre || coincidenciaCodigo;
     });
 
@@ -1921,7 +1921,7 @@ async function exportInventoryToCSV() {
         const productTotal = product.precio * product.cantidad;
         totalInventoryValue += productTotal;
         const escapedProductName = `"${product.nombre.replace(/"/g, '""')}"`;
-        const codigoExp = product.codigo_Barras ? product.codigo_Barras : "N/A";
+        const codigoExp = product.codigo_barras ? product.codigo_barras : "N/A";
 
         csvContent += `${codigoExp},${escapedProductName},${product.precio},${product.cantidad},${productTotal}\n`;
     });
@@ -2025,7 +2025,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (inputBuscarProductVenta) {
         inputBuscarProductVenta.addEventListener('input', () => {
             const term = inputBuscarProductVenta.value.trim();
-            const productoEncontrado = inventory.find(p => p.codigo_Barras === term);
+            const productoEncontrado = inventory.find(p => p.codigo_barras === term);
             
             if (productoEncontrado) {
                 selectProductoVenta.value = productoEncontrado.id;
@@ -3356,7 +3356,7 @@ function renderCombos() {
             if (!q) { autoList.classList.remove('visible'); return; }
             const resultados = inventory.filter(p =>
                 (p.nombre || '').toLowerCase().includes(q) ||
-                (p.codigo_Barras || '').includes(q)
+                (p.codigo_barras || '').includes(q)
             ).slice(0, 8);
             if (!resultados.length) { autoList.classList.remove('visible'); return; }
             resultados.forEach(p => {
@@ -3831,7 +3831,7 @@ async function sincronizarConSupabase() {
                 if (!user) throw new Error('Sin sesión activa');
                 const d = item.datos;
                 const { error } = await supabaseClient.from('productos').insert([{
-                    codigo_Barras: d.codigo_Barras || null,
+                    codigo_barras: d.codigo_barras || null,
                     nombre:       d.nombre,
                     precio:       d.precio,
                     cantidad:     d.cantidad,
@@ -4103,7 +4103,7 @@ window.handleSaveProduct = async function() {
     }
     // En modo offline la imagen es opcional — se puede agregar al sincronizar
 
-    await guardarProductoOffline({ codigo_Barras: codigo, nombre, precio, cantidad, imagen: urlImagen, categoria });
+    await guardarProductoOffline({ codigo_barras: codigo, nombre, precio, cantidad, imagen: urlImagen, categoria });
     resetFormAndMode();
     await mostrarAlerta(`✅ Producto "${nombre}" guardado localmente.\nSe subirá a Supabase al sincronizar.`, 'success');
 };
