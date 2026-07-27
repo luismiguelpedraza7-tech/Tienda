@@ -2048,7 +2048,9 @@ if (formLoginCajero) {
             errorLoginCajero.style.display = "block";
             return;
         }
-        // Si fue exitoso, onAuthStateChange / checkAuthStatus se encargan del resto
+        // Como este login no recarga la página (a diferencia de Google),
+        // tenemos que forzar manualmente la revisión de sesión.
+        await checkAuthStatus();
     });
 }
 
