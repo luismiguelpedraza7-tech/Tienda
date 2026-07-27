@@ -2040,17 +2040,30 @@ if (formLoginCajero) {
 
         const email = inputEmailCajero.value.trim();
         const password = inputPasswordCajero.value;
+        const btnEntrar = formLoginCajero.querySelector('.btn-entrar-cajero');
 
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        btnEntrar.disabled = true;
+        btnEntrar.textContent = "Entrando...";
 
-        if (error) {
-            errorLoginCajero.textContent = "Correo o contraseña incorrectos.";
+        try {
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                errorLoginCajero.textContent = "Correo o contraseña incorrectos.";
+                errorLoginCajero.style.display = "block";
+                return;
+            }
+            // Como este login no recarga la página (a diferencia de Google),
+            // tenemos que forzar manualmente la revisión de sesión.
+            await checkAuthStatus();
+        } catch (err) {
+            console.error('Error inesperado al iniciar sesión:', err);
+            errorLoginCajero.textContent = "Ocurrió un error inesperado. Intenta de nuevo.";
             errorLoginCajero.style.display = "block";
-            return;
+        } finally {
+            btnEntrar.disabled = false;
+            btnEntrar.textContent = "Entrar";
         }
-        // Como este login no recarga la página (a diferencia de Google),
-        // tenemos que forzar manualmente la revisión de sesión.
-        await checkAuthStatus();
     });
 }
 
