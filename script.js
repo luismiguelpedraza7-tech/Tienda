@@ -295,6 +295,18 @@ const btnLogout = document.querySelector("#btnLogout");
 
 const btnGoogle = document.querySelector("#btnGoogle"); // Integrado desde Supabase
 
+// Referencias Login Cajero
+const btnMostrarLoginCajero = document.querySelector("#btnMostrarLoginCajero");
+const formLoginCajero = document.querySelector("#formLoginCajero");
+const inputEmailCajero = document.querySelector("#inputEmailCajero");
+const inputPasswordCajero = document.querySelector("#inputPasswordCajero");
+const btnVolverGoogle = document.querySelector("#btnVolverGoogle");
+const errorLoginCajero = document.querySelector("#errorLoginCajero");
+
+// Rol del usuario logueado (se llena en checkAuthStatus)
+let currentUserRole = null;
+let currentUserCajaNumero = null;
+
 // Referencias Modal Scanner
 const modalEscaner = document.querySelector("#modal-escaner");
 const btnCerrarScanner = document.querySelector("#btnCerrarScanner");
@@ -723,10 +735,27 @@ async function checkAuthStatus(pushToHistory = true) {
         currentLoggedInUserEmail = session.user.email;
         currentUserId = session.user.id;
 
+        // ---- Consultar el perfil (rol y caja asignada) ----
+        const { data: perfil, error: perfilError } = await supabaseClient
+            .from('perfiles')
+            .select('rol, nombre, caja_numero')
+            .eq('id', currentUserId)
+            .single();
+
+        if (perfilError || !perfil) {
+            console.error('No se pudo cargar el perfil del usuario:', perfilError);
+            currentUserRole = 'CAJERO'; // por seguridad, el más restringido
+            currentUserCajaNumero = null;
+        } else {
+            currentUserRole = perfil.rol;
+            currentUserCajaNumero = perfil.caja_numero;
+        }
+        // -----------------------------------------------------
+
         // ---- Perfil sidebar ----
         const meta = session.user.user_metadata || {};
         const avatarUrl = meta.avatar_url || meta.picture || '';
-        const fullName  = meta.full_name || meta.name || currentLoggedInUserEmail;
+        const fullName  = (perfil && perfil.nombre) || meta.full_name || meta.name || currentLoggedInUserEmail;
 
         const avatarEl = document.getElementById('sidebar-user-avatar');
         const nameEl   = document.getElementById('sidebar-user-name');
@@ -744,9 +773,19 @@ async function checkAuthStatus(pushToHistory = true) {
     } else {
         currentLoggedInUserEmail = null;
         currentUserId = null;
+        currentUserRole = null;
+        currentUserCajaNumero = null;
         // Ocultar sidebar al cerrar sesión
         const sidebar = document.getElementById('sidebar-menu');
         if (sidebar) sidebar.classList.remove('activo');
+        // Resetear el formulario de login de cajero a su estado inicial
+        if (formLoginCajero) {
+            formLoginCajero.style.display = 'none';
+            formLoginCajero.reset();
+            errorLoginCajero.style.display = 'none';
+        }
+        if (btnMostrarLoginCajero) btnMostrarLoginCajero.style.display = 'block';
+        if (btnGoogle) btnGoogle.style.display = 'flex';
         if (pushToHistory) try { history.replaceState({ screen: 'pantalla-login' }, '', '#pantalla-login'); } catch(e) {}
         showScreen('pantalla-login', false);
     }
@@ -1973,6 +2012,45 @@ async function handleLogout() {
 
 if (btnGoogle) btnGoogle.addEventListener("click", handleLoginWithGoogle);
 btnLogout.addEventListener("click", handleLogout);
+
+// ==========================================
+// LOGIN CAJERO (usuario/contraseña)
+// ==========================================
+if (btnMostrarLoginCajero) {
+    btnMostrarLoginCajero.addEventListener("click", () => {
+        formLoginCajero.style.display = "flex";
+        btnMostrarLoginCajero.style.display = "none";
+        btnGoogle.style.display = "none";
+    });
+}
+
+if (btnVolverGoogle) {
+    btnVolverGoogle.addEventListener("click", () => {
+        formLoginCajero.style.display = "none";
+        btnMostrarLoginCajero.style.display = "block";
+        btnGoogle.style.display = "flex";
+        errorLoginCajero.style.display = "none";
+    });
+}
+
+if (formLoginCajero) {
+    formLoginCajero.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorLoginCajero.style.display = "none";
+
+        const email = inputEmailCajero.value.trim();
+        const password = inputPasswordCajero.value;
+
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            errorLoginCajero.textContent = "Correo o contraseña incorrectos.";
+            errorLoginCajero.style.display = "block";
+            return;
+        }
+        // Si fue exitoso, onAuthStateChange / checkAuthStatus se encargan del resto
+    });
+}
 
 // ==========================================
 // BOTÓN ACTUALIZAR (sidebar)

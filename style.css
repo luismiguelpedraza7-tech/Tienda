@@ -4329,3 +4329,48 @@ input[type="number"] {
   z-index: 10;
   filter: drop-shadow(2px 4px 16px rgba(0,0,0,0.5));
 }
+/* ===== Login de Cajero ===== */
+.btn-link-cajero {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: #0c566c;
+    font-size: 13px;
+    text-align: center;
+    padding: 10px 0 0 0;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.form-login-cajero {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.form-login-cajero input {
+    padding: 10px 14px;
+    border: 1px solid #dadce0;
+    border-radius: 24px;
+    font-size: 14px;
+}
+
+.btn-entrar-cajero {
+    padding: 10px 15px;
+    background-color: #0c566c;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.error-login-cajero {
+    color: #d93025;
+    font-size: 13px;
+    text-align: center;
+    margin: 0;
+}

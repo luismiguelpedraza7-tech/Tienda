@@ -46,6 +46,20 @@
 
                 Continuar con Google
             </button>
+
+            <button type="button" id="btnMostrarLoginCajero" class="btn-link-cajero">
+              Iniciar sesión como cajero
+            </button>
+
+            <form id="formLoginCajero" class="form-login-cajero" style="display:none;">
+              <input type="email" id="inputEmailCajero" placeholder="Correo" required autocomplete="username">
+              <input type="password" id="inputPasswordCajero" placeholder="Contraseña" required autocomplete="current-password">
+              <button type="submit" class="btn-entrar-cajero">Entrar</button>
+              <button type="button" id="btnVolverGoogle" class="btn-link-cajero">
+                ← Volver
+              </button>
+              <p id="errorLoginCajero" class="error-login-cajero" style="display:none;"></p>
+            </form>
         </div>
       </div>
     </div>
