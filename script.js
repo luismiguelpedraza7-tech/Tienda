@@ -3401,7 +3401,7 @@ async function loadCombos() {
     const { data, error } = await supabaseClient
         .from('combos')
         .select('*, combo_productos(*)')
-        .eq('user_id', currentUserId)
+        .eq('user_id', TIENDA_OWNER_ID)
         .order('created_at', { ascending: false });
     if (!error && data) combos = data;
 }
@@ -3409,9 +3409,15 @@ async function loadCombos() {
 async function saveCombo(combo) {
     const { data: comboInsertado, error: err1 } = await supabaseClient
         .from('combos')
-        .insert([{ nombre: combo.nombre, descripcion: combo.descripcion, precio: combo.precio, precio_suma: combo.precioSuma, user_id: currentUserId }])
+        .insert([{ nombre: combo.nombre, descripcion: combo.descripcion, precio: combo.precio, precio_suma: combo.precioSuma, user_id: TIENDA_OWNER_ID }])
         .select().single();
-    if (err1) throw err1;
+
+    if (err1) {
+        if (err1.message && err1.message.toLowerCase().includes('row-level security')) {
+            throw new Error('ACCESO_DENEGADO');
+        }
+        throw err1;
+    }
 
     const items = combo.productos.map(p => ({
         combo_id: comboInsertado.id,
@@ -3419,7 +3425,7 @@ async function saveCombo(combo) {
         nombre: p.nombre,
         precio: p.precio,
         imagen: p.imagen,
-        user_id: currentUserId
+        user_id: TIENDA_OWNER_ID
     }));
     const { error: err2 } = await supabaseClient.from('combo_productos').insert(items);
     if (err2) throw err2;
@@ -3427,7 +3433,9 @@ async function saveCombo(combo) {
 }
 
 async function deleteCombo(comboId) {
-    await supabaseClient.from('combos').delete().eq('id', comboId);
+    const { data, error } = await supabaseClient.from('combos').delete().eq('id', comboId).select();
+    if (error) throw error;
+    return data && data.length > 0; // true si de verdad se borró algo
 }
 
 function renderCombos() {
@@ -3584,7 +3592,11 @@ async function handleGuardarCombo() {
         renderTarjetasCombos();
     } catch(e) {
         console.error(e);
-        mostrarAlerta('❌ Error guardando combo. Verifica que las tablas existan en Supabase.', 'error');
+        if (e.message === 'ACCESO_DENEGADO') {
+            mostrarAlerta("🚫 Acceso denegado: esta acción es solo para administradores.", 'error');
+        } else {
+            mostrarAlerta('❌ Error guardando combo. Verifica que las tablas existan en Supabase.', 'error');
+        }
     }
 }
 
@@ -3622,7 +3634,11 @@ function renderTarjetasCombos() {
         btn.onclick = async () => {
             const ok = await mostrarConfirm('¿Eliminar este combo?', 'danger');
             if (!ok) return;
-            await deleteCombo(btn.dataset.comboid);
+            const seBorro = await deleteCombo(btn.dataset.comboid);
+            if (!seBorro) {
+                await mostrarAlerta("🚫 Acceso denegado: esta acción es solo para administradores.", 'error');
+                return;
+            }
             combos = combos.filter(c => String(c.id) !== String(btn.dataset.comboid));
             renderTarjetasCombos();
         };
