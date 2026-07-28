@@ -1761,7 +1761,7 @@ async function handleSaveProduct() {
         }
 
         if (editingProductId !== null) {
-            const { error } = await supabaseClient
+            const { data, error } = await supabaseClient
                 .from('productos')
                 .update({ 
                     codigo_barras: codigo, 
@@ -1769,11 +1769,16 @@ async function handleSaveProduct() {
                     imagen_url: urlImagenFinal, 
                     categoria 
                 })
-                .eq('id', editingProductId);
+                .eq('id', editingProductId)
+                .select();
 
             if (error) {
                 console.error("Supabase UPDATE error:", JSON.stringify(error));
                 throw error;
+            }
+            if (!data || data.length === 0) {
+                await mostrarAlerta("🚫 Acceso denegado: esta acción es solo para administradores.", 'error');
+                return;
             }
             await mostrarAlerta(`¡Producto "${nombre}" actualizado!`, 'success');
         } 
@@ -1801,7 +1806,11 @@ async function handleSaveProduct() {
     } catch (error) {
         console.error("Error completo handleSaveProduct:", error);
         const msg = error?.message || error?.details || JSON.stringify(error);
-        await mostrarAlerta(`Error al guardar el producto:\n${msg}`, 'error');
+        if (msg && msg.toLowerCase().includes('row-level security')) {
+            await mostrarAlerta("🚫 Acceso denegado: esta acción es solo para administradores.", 'error');
+        } else {
+            await mostrarAlerta(`Error al guardar el producto:\n${msg}`, 'error');
+        }
     } finally {
         btnGuardarProducto.textContent = textoOriginalBoton;
         btnGuardarProducto.disabled = false;
@@ -1927,15 +1936,19 @@ if (contenedorProductos) {
 
         if (event.target.classList.contains('btn-borrar-producto')) {
             if(await mostrarConfirm("¿Estás seguro de que quieres eliminar este producto?", 'danger')){
-                const { error } = await supabaseClient.from('productos').delete().eq('id', productId);
-                
-                if (!error) {
+                const { data, error } = await supabaseClient.from('productos').delete().eq('id', productId).select();
+
+                if (error) {
+                    console.error("Error al eliminar producto:", error);
+                    await mostrarAlerta("Error al eliminar el producto.", 'error');
+                } else if (!data || data.length === 0) {
+                    // La operación "corrió" pero RLS no dejó afectar ninguna fila:
+                    // significa que el usuario no tiene permiso (no es ADMIN).
+                    await mostrarAlerta("🚫 Acceso denegado: esta acción es solo para administradores.", 'error');
+                } else {
                     if (productId === editingProductId) resetFormAndMode();
                     await mostrarAlerta("Producto eliminado.", 'success');
                     loadInventory(); 
-                } else {
-                    console.error("Error al eliminar producto:", error);
-                    await mostrarAlerta("Error al eliminar el producto.", 'error');
                 }
             }
         } else if (event.target.classList.contains('btn-editar-producto')) {
