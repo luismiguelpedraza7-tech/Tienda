@@ -2127,7 +2127,7 @@ async function verificarTurnoActivo() {
         return;
     }
 
-    if (!data) {
+    if (!data || !data.id) {
         // No hay turno abierto en esta caja: hay que abrir uno (bloqueante)
         turnoActivo = null;
         if (indicadorTurnoActivo) indicadorTurnoActivo.style.display = 'none';
