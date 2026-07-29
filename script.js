@@ -314,6 +314,7 @@ const tituloAbrirTurno = document.querySelector("#tituloAbrirTurno");
 const inputMontoInicialTurno = document.querySelector("#inputMontoInicialTurno");
 const errorAbrirTurno = document.querySelector("#errorAbrirTurno");
 const btnConfirmarAbrirTurno = document.querySelector("#btnConfirmarAbrirTurno");
+const btnCerrarModalAbrirTurno = document.querySelector("#btnCerrarModalAbrirTurno");
 
 // Referencias Modal Cerrar Turno
 const modalCerrarTurno = document.querySelector("#modal-cerrar-turno");
@@ -2149,6 +2150,12 @@ function actualizarIndicadorTurno() {
     if (!turnoActivo || !indicadorTurnoActivo) return;
     textoTurnoActivo.textContent = `🟢 Caja ${turnoActivo.caja_numero} — Turno #${turnoActivo.numero_turno} abierto`;
     indicadorTurnoActivo.style.display = 'flex';
+}
+
+if (btnCerrarModalAbrirTurno) {
+    btnCerrarModalAbrirTurno.addEventListener('click', () => {
+        modalAbrirTurno.classList.add('pantalla-display-none');
+    });
 }
 
 if (btnConfirmarAbrirTurno) {

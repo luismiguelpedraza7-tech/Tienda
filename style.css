@@ -4426,3 +4426,24 @@ input[type="number"] {
 
 .resumen-arqueo-diferencia-ok { color: #34a853; font-weight: bold; }
 .resumen-arqueo-diferencia-mal { color: #d93025; font-weight: bold; }
+
+/* Botón X para cerrar el modal de abrir turno sin bloquear */
+.modal-contenido {
+    position: relative;
+}
+
+.modal-cerrar-x {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #666;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-cerrar-x:hover {
+    color: #d93025;
+}
