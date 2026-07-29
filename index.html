@@ -229,6 +229,10 @@
   <div id="pantalla-ventas-fisicas">
     <h1>Registro de Ventas Físicas</h1>
     <button id="btnVerHistorial" class="btn-historial-esquina btn-historial-esquina-position">📅 Historial</button>
+    <div id="indicadorTurnoActivo" class="indicador-turno" style="display:none;">
+        <span id="textoTurnoActivo"></span>
+        <button id="btnAbrirModalCerrarTurno" class="btn-cerrar-turno-mini">Cerrar Turno</button>
+    </div>
 
     <!-- NUEVO CONTENEDOR FLEXIBLE Y RESPONSIVE -->
     <div class="contenedor-ventas-independientes"> 
@@ -663,6 +667,40 @@
           <h3>Escanear Código</h3>
           <div id="lector-camara"></div>
           <button id="btnCerrarScanner" class="btn-borrar-producto">Cancelar</button>
+      </div>
+  </div>
+
+  <!-- ===== MODAL ABRIR TURNO (bloqueante) ===== -->
+  <div id="modal-abrir-turno" class="modal-overlay pantalla-display-none">
+      <div class="modal-contenido">
+          <h3 id="tituloAbrirTurno">Abrir Caja</h3>
+          <p>Ingresa el monto inicial de dinero en efectivo para abrir el turno.</p>
+          <label for="inputMontoInicialTurno">Monto inicial ($):</label>
+          <input type="number" id="inputMontoInicialTurno" placeholder="Ej: 50000" min="0" step="1">
+          <p id="errorAbrirTurno" class="error-login-cajero" style="display:none;"></p>
+          <button id="btnConfirmarAbrirTurno" class="btn-google" style="background:#0c566c;">Abrir Turno</button>
+      </div>
+  </div>
+
+  <!-- ===== MODAL CERRAR TURNO (arqueo) ===== -->
+  <div id="modal-cerrar-turno" class="modal-overlay pantalla-display-none">
+      <div class="modal-contenido">
+          <div id="pasoIngresarMontoFinal">
+              <h3>Cerrar Turno — Arqueo de Caja</h3>
+              <p>Cuenta el efectivo físico que tienes en la caja e ingrésalo aquí.</p>
+              <label for="inputMontoFinalReal">Monto real contado ($):</label>
+              <input type="number" id="inputMontoFinalReal" placeholder="Ej: 65000" min="0" step="1">
+              <p id="errorCerrarTurno" class="error-login-cajero" style="display:none;"></p>
+              <div style="display:flex; gap:10px; margin-top:10px;">
+                  <button id="btnCancelarCerrarTurno" class="btn-borrar-producto">Cancelar</button>
+                  <button id="btnConfirmarCerrarTurno" class="btn-google" style="background:#0c566c;">Confirmar Cierre</button>
+              </div>
+          </div>
+          <div id="pasoResumenArqueo" style="display:none;">
+              <h3>✅ Turno Cerrado</h3>
+              <div id="resumenArqueoContenido"></div>
+              <button id="btnCerrarResumenArqueo" class="btn-google" style="background:#0c566c; margin-top:14px;">Aceptar</button>
+          </div>
       </div>
   </div>
 

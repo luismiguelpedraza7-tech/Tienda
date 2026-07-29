@@ -4374,3 +4374,55 @@ input[type="number"] {
     text-align: center;
     margin: 0;
 }
+
+/* ===== Indicador de Turno Activo ===== */
+.indicador-turno {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: rgba(12, 86, 108, 0.15);
+    border: 1px solid #0c566c;
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin: 10px 0 20px 0;
+    color: #eaf6fa;
+    font-weight: 600;
+}
+
+.btn-cerrar-turno-mini {
+    background: #d93025;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Modales de turno reutilizan .modal-overlay / .modal-contenido ya existentes */
+.modal-contenido label {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+.modal-contenido input[type="number"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.resumen-arqueo-linea {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.resumen-arqueo-diferencia-ok { color: #34a853; font-weight: bold; }
+.resumen-arqueo-diferencia-mal { color: #d93025; font-weight: bold; }

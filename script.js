@@ -306,6 +306,30 @@ const errorLoginCajero = document.querySelector("#errorLoginCajero");
 // Rol del usuario logueado (se llena en checkAuthStatus)
 let currentUserRole = null;
 let currentUserCajaNumero = null;
+let turnoActivo = null;
+
+// Referencias Modal Abrir Turno
+const modalAbrirTurno = document.querySelector("#modal-abrir-turno");
+const tituloAbrirTurno = document.querySelector("#tituloAbrirTurno");
+const inputMontoInicialTurno = document.querySelector("#inputMontoInicialTurno");
+const errorAbrirTurno = document.querySelector("#errorAbrirTurno");
+const btnConfirmarAbrirTurno = document.querySelector("#btnConfirmarAbrirTurno");
+
+// Referencias Modal Cerrar Turno
+const modalCerrarTurno = document.querySelector("#modal-cerrar-turno");
+const inputMontoFinalReal = document.querySelector("#inputMontoFinalReal");
+const errorCerrarTurno = document.querySelector("#errorCerrarTurno");
+const btnConfirmarCerrarTurno = document.querySelector("#btnConfirmarCerrarTurno");
+const btnCancelarCerrarTurno = document.querySelector("#btnCancelarCerrarTurno");
+const pasoIngresarMontoFinal = document.querySelector("#pasoIngresarMontoFinal");
+const pasoResumenArqueo = document.querySelector("#pasoResumenArqueo");
+const resumenArqueoContenido = document.querySelector("#resumenArqueoContenido");
+const btnCerrarResumenArqueo = document.querySelector("#btnCerrarResumenArqueo");
+
+// Indicador de turno en la pantalla de ventas físicas
+const indicadorTurnoActivo = document.querySelector("#indicadorTurnoActivo");
+const textoTurnoActivo = document.querySelector("#textoTurnoActivo");
+const btnAbrirModalCerrarTurno = document.querySelector("#btnAbrirModalCerrarTurno");
 
 // Referencias Modal Scanner
 const modalEscaner = document.querySelector("#modal-escaner");
@@ -684,6 +708,7 @@ function showScreen(screenId, pushToHistory = true) {
             var panelCant = document.getElementById('panelCantidadVenta');
             if (panelCant) panelCant.style.display = 'none';
             updateSalesDropdown();
+            verificarTurnoActivo();
             break;
         }
         case 'pantalla-ventas-online': {
@@ -2077,6 +2102,158 @@ if (formLoginCajero) {
             btnEntrar.disabled = false;
             btnEntrar.textContent = "Entrar";
         }
+    });
+}
+
+// ==========================================
+// GESTIÓN DE TURNO / ARQUEO DE CAJA
+// ==========================================
+
+// Se llama cada vez que se entra a la pantalla de Ventas Físicas
+async function verificarTurnoActivo() {
+    // Si este usuario no tiene una caja asignada, no aplica el flujo de turno
+    if (!currentUserCajaNumero) {
+        if (indicadorTurnoActivo) indicadorTurnoActivo.style.display = 'none';
+        turnoActivo = null;
+        return;
+    }
+
+    const { data, error } = await supabaseClient.rpc('sesion_activa', {
+        p_caja_numero: currentUserCajaNumero
+    });
+
+    if (error) {
+        console.error('Error verificando turno activo:', error);
+        return;
+    }
+
+    if (!data) {
+        // No hay turno abierto en esta caja: hay que abrir uno (bloqueante)
+        turnoActivo = null;
+        if (indicadorTurnoActivo) indicadorTurnoActivo.style.display = 'none';
+        mostrarModalAbrirTurno();
+    } else {
+        turnoActivo = data;
+        actualizarIndicadorTurno();
+    }
+}
+
+function mostrarModalAbrirTurno() {
+    tituloAbrirTurno.textContent = `Abrir Caja ${currentUserCajaNumero}`;
+    inputMontoInicialTurno.value = '';
+    errorAbrirTurno.style.display = 'none';
+    modalAbrirTurno.classList.remove('pantalla-display-none');
+}
+
+function actualizarIndicadorTurno() {
+    if (!turnoActivo || !indicadorTurnoActivo) return;
+    textoTurnoActivo.textContent = `🟢 Caja ${turnoActivo.caja_numero} — Turno #${turnoActivo.numero_turno} abierto`;
+    indicadorTurnoActivo.style.display = 'flex';
+}
+
+if (btnConfirmarAbrirTurno) {
+    btnConfirmarAbrirTurno.addEventListener('click', async () => {
+        errorAbrirTurno.style.display = 'none';
+        const monto = parseFloat(inputMontoInicialTurno.value);
+
+        if (isNaN(monto) || monto < 0) {
+            errorAbrirTurno.textContent = 'Ingresa un monto válido.';
+            errorAbrirTurno.style.display = 'block';
+            return;
+        }
+
+        btnConfirmarAbrirTurno.disabled = true;
+        btnConfirmarAbrirTurno.textContent = 'Abriendo...';
+
+        const { data, error } = await supabaseClient.rpc('abrir_turno', {
+            p_caja_numero: currentUserCajaNumero,
+            p_monto_inicial: monto
+        });
+
+        btnConfirmarAbrirTurno.disabled = false;
+        btnConfirmarAbrirTurno.textContent = 'Abrir Turno';
+
+        if (error) {
+            console.error('Error al abrir turno:', error);
+            errorAbrirTurno.textContent = 'No se pudo abrir el turno. Intenta de nuevo.';
+            errorAbrirTurno.style.display = 'block';
+            return;
+        }
+
+        turnoActivo = data;
+        modalAbrirTurno.classList.add('pantalla-display-none');
+        actualizarIndicadorTurno();
+    });
+}
+
+if (btnAbrirModalCerrarTurno) {
+    btnAbrirModalCerrarTurno.addEventListener('click', () => {
+        inputMontoFinalReal.value = '';
+        errorCerrarTurno.style.display = 'none';
+        pasoIngresarMontoFinal.style.display = 'block';
+        pasoResumenArqueo.style.display = 'none';
+        modalCerrarTurno.classList.remove('pantalla-display-none');
+    });
+}
+
+if (btnCancelarCerrarTurno) {
+    btnCancelarCerrarTurno.addEventListener('click', () => {
+        modalCerrarTurno.classList.add('pantalla-display-none');
+    });
+}
+
+if (btnConfirmarCerrarTurno) {
+    btnConfirmarCerrarTurno.addEventListener('click', async () => {
+        errorCerrarTurno.style.display = 'none';
+        const montoReal = parseFloat(inputMontoFinalReal.value);
+
+        if (isNaN(montoReal) || montoReal < 0) {
+            errorCerrarTurno.textContent = 'Ingresa un monto válido.';
+            errorCerrarTurno.style.display = 'block';
+            return;
+        }
+
+        btnConfirmarCerrarTurno.disabled = true;
+        btnConfirmarCerrarTurno.textContent = 'Cerrando...';
+
+        const { data, error } = await supabaseClient.rpc('cerrar_turno', {
+            p_sesion_id: turnoActivo.id,
+            p_monto_final_real: montoReal
+        });
+
+        btnConfirmarCerrarTurno.disabled = false;
+        btnConfirmarCerrarTurno.textContent = 'Confirmar Cierre';
+
+        if (error) {
+            console.error('Error al cerrar turno:', error);
+            errorCerrarTurno.textContent = 'No se pudo cerrar el turno. Intenta de nuevo.';
+            errorCerrarTurno.style.display = 'block';
+            return;
+        }
+
+        const diferenciaClase = data.diferencia === 0 ? 'resumen-arqueo-diferencia-ok' : 'resumen-arqueo-diferencia-mal';
+        resumenArqueoContenido.innerHTML = `
+            <div class="resumen-arqueo-linea"><span>Caja</span><strong>${data.caja_numero}</strong></div>
+            <div class="resumen-arqueo-linea"><span>Turno</span><strong>#${data.numero_turno}</strong></div>
+            <div class="resumen-arqueo-linea"><span>Monto inicial</span><strong>$${Number(data.monto_inicial).toLocaleString('es-CO')}</strong></div>
+            <div class="resumen-arqueo-linea"><span>Esperado</span><strong>$${Number(data.monto_final_esperado).toLocaleString('es-CO')}</strong></div>
+            <div class="resumen-arqueo-linea"><span>Real contado</span><strong>$${Number(data.monto_final_real).toLocaleString('es-CO')}</strong></div>
+            <div class="resumen-arqueo-linea"><span>Diferencia</span><strong class="${diferenciaClase}">$${Number(data.diferencia).toLocaleString('es-CO')}</strong></div>
+        `;
+        pasoIngresarMontoFinal.style.display = 'none';
+        pasoResumenArqueo.style.display = 'block';
+
+        turnoActivo = null;
+        if (indicadorTurnoActivo) indicadorTurnoActivo.style.display = 'none';
+    });
+}
+
+if (btnCerrarResumenArqueo) {
+    btnCerrarResumenArqueo.addEventListener('click', () => {
+        modalCerrarTurno.classList.add('pantalla-display-none');
+        // Después de cerrar, si esta caja necesita reabrirse para el siguiente turno,
+        // se vuelve a verificar automáticamente.
+        verificarTurnoActivo();
     });
 }
 
