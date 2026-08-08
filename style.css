@@ -4447,3 +4447,23 @@ input[type="number"] {
 .modal-cerrar-x:hover {
     color: #d93025;
 }
+
+/* ===== Selector de Método de Pago (Ventas Físicas) ===== */
+.selector-metodo-pago {
+    display: flex;
+    gap: 16px;
+    margin: 10px 0;
+    padding: 10px 0;
+}
+
+.opcion-metodo-pago {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.opcion-metodo-pago input[type="radio"] {
+    cursor: pointer;
+}

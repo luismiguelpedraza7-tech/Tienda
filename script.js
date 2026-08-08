@@ -1174,6 +1174,14 @@ if (btnLimpiarVenta) {
 
 if (btnAgregarAlCarrito) {
     btnAgregarAlCarrito.addEventListener("click", async () => {
+        // Si este usuario tiene una caja asignada, es obligatorio tener un turno abierto
+        // incluso para empezar a armar la venta, no solo para registrarla.
+        if (currentUserCajaNumero && !turnoActivo) {
+            await mostrarAlerta("⚠️ Debes abrir el turno de tu caja antes de vender.", 'warn');
+            verificarTurnoActivo();
+            return;
+        }
+
         const productId = selectProductoVenta.value;
         let qty = parseInt(inputCantidadVenta.value);
 
@@ -1290,6 +1298,13 @@ if (btnRegistrarVenta) {
             return;
         }
 
+        // Si este usuario tiene una caja asignada, es obligatorio tener un turno abierto
+        if (currentUserCajaNumero && !turnoActivo) {
+            await mostrarAlerta("⚠️ Debes abrir el turno de tu caja antes de registrar ventas.", 'warn');
+            verificarTurnoActivo();
+            return;
+        }
+
         btnRegistrarVenta.disabled = true;
         btnRegistrarVenta.textContent = "Registrando... ⏳";
 
@@ -1350,7 +1365,42 @@ if (btnRegistrarVenta) {
                 await mostrarAlerta(`✅ Venta guardada localmente.\nTicket #${newSale.id} por $${totalSale.toLocaleString('es-CO')}\nSe sincronizará con Supabase cuando actives el modo en línea.`, 'success');
             } else {
                 // MODO ONLINE: guardar en Supabase
-                const ventaGuardada = await saveSale(newSale);
+                let ventaGuardada;
+                const metodoPagoSeleccionado = (document.querySelector('input[name="metodoPagoVenta"]:checked') || {}).value || 'efectivo';
+
+                if (currentUserCajaNumero) {
+                    // Usuario con caja asignada: pasa por la función que valida turno,
+                    // calcula el total en el servidor y descuenta stock de forma segura.
+                    const itemsParaRpc = currentCart.map(item => ({
+                        product_id: item.id,
+                        nombre: item.name,
+                        cantidad: item.qty,
+                        precio: item.price
+                    }));
+
+                    const { data: ventaRpc, error: errorRpc } = await supabaseClient.rpc('registrar_venta', {
+                        p_caja_numero: currentUserCajaNumero,
+                        p_metodo_pago: metodoPagoSeleccionado,
+                        p_numero_ticket: numeroTicket,
+                        p_items: itemsParaRpc
+                    });
+
+                    if (errorRpc) {
+                        console.error('Error en registrar_venta:', errorRpc);
+                        if (errorRpc.message && errorRpc.message.includes('No hay ningún turno abierto')) {
+                            await mostrarAlerta("⚠️ No hay un turno abierto en tu caja. Ábrelo antes de vender.", 'warn');
+                            verificarTurnoActivo();
+                        } else {
+                            await mostrarAlerta("Error al registrar la venta: " + errorRpc.message, 'error');
+                        }
+                        return;
+                    }
+                    ventaGuardada = ventaRpc;
+                } else {
+                    // Usuario sin caja asignada (ej. admin de escritorio): flujo anterior, sin turno.
+                    ventaGuardada = await saveSale(newSale);
+                }
+
                 newSale.supabaseId = ventaGuardada.id;
                 sales.unshift(newSale);
                 await loadInventory();
